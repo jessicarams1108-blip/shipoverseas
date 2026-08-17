@@ -255,17 +255,17 @@
               <input name="email" type="email" required placeholder="customer@example.com" />
             </label>
             <div class="button-row">
-              <button class="secondary-button" type="button" id="requestResetButton">Send Reset Code</button>
+              <button class="secondary-button" type="button" id="requestResetButton">Send Reset Email</button>
             </div>
-            <label>
+            <label data-local-reset-only>
               Reset Code
-              <input name="code" required inputmode="numeric" placeholder="6-digit code" />
+              <input name="code" inputmode="numeric" placeholder="6-digit code" />
             </label>
-            <label>
+            <label data-local-reset-only>
               New Password
-              <input name="password" type="password" required minlength="4" placeholder="New password" />
+              <input name="password" type="password" minlength="4" placeholder="New password" />
             </label>
-            <button class="primary-button" type="submit">Update Password</button>
+            <button class="primary-button" type="submit" data-local-reset-only>Update Password</button>
             <p class="form-note" id="resetMessage" role="status"></p>
           </form>
           <p class="small-note">Use the customer portal to see shipments and email updates connected to your account.</p>
@@ -632,6 +632,6 @@
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="./app.js?v=20260817-settings-audit"></script>
+    <script type="module" src="./app.js?v=20260817-firebase"></script>
   </body>
 </html>

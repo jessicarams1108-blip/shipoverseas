@@ -1,3 +1,5 @@
+import { firebaseClient } from "./firebase-client.js?v=20260817-firebase";
+
 const TOKEN_KEY = "shipoverseas.token";
 const THEME_KEY = "shipoverseas.theme";
 
@@ -84,7 +86,8 @@ const state = {
   auditLogs: [],
   selectedSupportConversationId: "",
   activePage: "",
-  selectedShipment: null
+  selectedShipment: null,
+  usingFirebase: false
 };
 
 const elements = {
@@ -148,6 +151,8 @@ const elements = {
   resetForm: document.querySelector("#resetForm"),
   requestResetButton: document.querySelector("#requestResetButton"),
   resetMessage: document.querySelector("#resetMessage"),
+  localResetOnly: document.querySelectorAll("[data-local-reset-only]"),
+  demoLogins: document.querySelectorAll(".demo-logins"),
   portalEmpty: document.querySelector("#portalEmpty"),
   customerContent: document.querySelector("#customerContent"),
   customerShipments: document.querySelector("#customerShipments"),
@@ -179,6 +184,23 @@ const elements = {
   fleetRows: document.querySelector("#fleetRows"),
   toast: document.querySelector("#toast")
 };
+
+function useFirebase() {
+  return state.usingFirebase && firebaseClient.isEnabled();
+}
+
+function configureFirebaseUi() {
+  const firebaseMode = useFirebase();
+  elements.localResetOnly.forEach((item) => item.classList.toggle("hidden", firebaseMode));
+  elements.demoLogins.forEach((item) => item.classList.toggle("hidden", firebaseMode));
+  elements.requestResetButton.textContent = firebaseMode ? "Send Reset Email" : "Send Reset Code";
+  if (elements.resetForm?.elements?.code) {
+    elements.resetForm.elements.code.required = !firebaseMode;
+  }
+  if (elements.resetForm?.elements?.password) {
+    elements.resetForm.elements.password.required = !firebaseMode;
+  }
+}
 
 if ("scrollRestoration" in window.history) {
   window.history.scrollRestoration = "manual";
@@ -326,6 +348,19 @@ function makeMapEmbedUrl(shipment, progress) {
 }
 
 async function loadBootstrap() {
+  if (useFirebase() && state.user) {
+    try {
+      const data = await firebaseClient.getBootstrap();
+      state.statusSteps = data.statusSteps;
+      state.shipments = data.shipments;
+      if (!state.selectedShipment) {
+        state.selectedShipment = state.shipments[0] || null;
+      }
+      return;
+    } catch (error) {
+      console.warn("Firebase bootstrap failed, using local API fallback.", error);
+    }
+  }
   const data = await apiFetch("/api/bootstrap");
   state.statusSteps = data.statusSteps;
   state.shipments = data.shipments;
@@ -335,6 +370,18 @@ async function loadBootstrap() {
 }
 
 async function loadMe() {
+  if (useFirebase()) {
+    try {
+      state.user = await firebaseClient.getCurrentUser();
+      state.token = state.user ? "firebase" : "";
+      return;
+    } catch (error) {
+      console.warn("Firebase profile load failed.", error);
+      state.user = null;
+      state.token = "";
+      return;
+    }
+  }
   if (!state.token) {
     state.user = null;
     return;
@@ -361,6 +408,25 @@ async function loadPrivateData() {
     state.supportMessages = [];
     state.auditLogs = [];
     state.selectedSupportConversationId = "";
+    return;
+  }
+  if (useFirebase()) {
+    const data = await firebaseClient.loadPrivateData();
+    state.myShipments = data.myShipments;
+    state.emails = data.emails;
+    state.supportConversations = data.supportConversations;
+    state.auditLogs = data.auditLogs;
+    if (isAdmin()) {
+      state.shipments = data.shipments;
+    }
+    if (!state.selectedSupportConversationId && state.supportConversations.length) {
+      state.selectedSupportConversationId = state.supportConversations[0].id;
+    }
+    if (state.selectedSupportConversationId && state.supportConversations.some((item) => item.id === state.selectedSupportConversationId)) {
+      await loadSupportThread(state.selectedSupportConversationId);
+    } else {
+      state.supportMessages = [];
+    }
     return;
   }
   const [shipmentsData, emailsData, supportData] = await Promise.all([
@@ -391,6 +457,12 @@ async function loadPrivateData() {
 async function loadSupportThread(conversationId) {
   if (!conversationId) {
     state.supportMessages = [];
+    return;
+  }
+  if (useFirebase()) {
+    const data = await firebaseClient.loadSupportThread(conversationId);
+    state.selectedSupportConversationId = data.conversation.id;
+    state.supportMessages = data.messages;
     return;
   }
   const data = await apiFetch(`/api/support/conversations/${encodeURIComponent(conversationId)}`);
@@ -892,8 +964,8 @@ function selectShipment(shipment) {
 }
 
 async function refreshAll() {
-  await loadBootstrap();
   await loadMe();
+  await loadBootstrap();
   await loadPrivateData();
   if (state.selectedShipment) {
     const fresh =
@@ -909,6 +981,16 @@ async function handleTrackingSubmit(event) {
   const trackingId = elements.heroTrackingInput.value.trim().toUpperCase();
   if (!trackingId) return;
   try {
+    if (useFirebase() && state.user) {
+      const shipment = await firebaseClient.findShipment(trackingId);
+      state.selectedShipment = shipment;
+      const existing = state.shipments.find((item) => item.trackingId === shipment.trackingId);
+      if (!existing) state.shipments.unshift(shipment);
+      elements.trackingMessage.textContent = "";
+      renderAll();
+      toast(`Loaded ${shipment.trackingId}`);
+      return;
+    }
     const data = await apiFetch(`/api/track/${encodeURIComponent(trackingId)}`);
     state.selectedShipment = data.shipment;
     const existing = state.shipments.find((shipment) => shipment.trackingId === data.shipment.trackingId);
@@ -925,6 +1007,16 @@ async function login(event) {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
   try {
+    if (useFirebase()) {
+      state.user = await firebaseClient.login(data.get("email"), data.get("password"));
+      state.token = "firebase";
+      localStorage.removeItem(TOKEN_KEY);
+      await loadBootstrap();
+      await loadPrivateData();
+      renderAll();
+      toast(`Logged in with Firebase as ${state.user.email}`);
+      return;
+    }
     const response = await apiFetch("/api/login", {
       method: "POST",
       body: {
@@ -947,6 +1039,20 @@ async function register(event) {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
   try {
+    if (useFirebase()) {
+      state.user = await firebaseClient.register({
+        name: data.get("name"),
+        email: data.get("email"),
+        password: data.get("password")
+      });
+      state.token = "firebase";
+      localStorage.removeItem(TOKEN_KEY);
+      await loadBootstrap();
+      await loadPrivateData();
+      renderAll();
+      toast("Firebase account created.");
+      return;
+    }
     const response = await apiFetch("/api/register", {
       method: "POST",
       body: {
@@ -973,6 +1079,12 @@ async function requestPasswordReset() {
     return;
   }
   try {
+    if (useFirebase()) {
+      const response = await firebaseClient.requestPasswordReset(email);
+      elements.resetMessage.textContent = response.message;
+      toast("Reset email sent.");
+      return;
+    }
     const response = await apiFetch("/api/password-reset/request", {
       method: "POST",
       body: { email }
@@ -991,6 +1103,10 @@ async function requestPasswordReset() {
 
 async function confirmPasswordReset(event) {
   event.preventDefault();
+  if (useFirebase()) {
+    await requestPasswordReset();
+    return;
+  }
   const form = event.currentTarget;
   const data = new FormData(form);
   try {
@@ -1017,6 +1133,13 @@ async function saveProfileSettings(event) {
   event.preventDefault();
   const name = elements.profileNameInput.value.trim();
   try {
+    if (useFirebase()) {
+      state.user = await firebaseClient.updateProfileDetails({ name });
+      await loadPrivateData();
+      renderAll();
+      toast("Firebase account details saved.");
+      return;
+    }
     const response = await apiFetch("/api/me", {
       method: "PATCH",
       body: { name }
@@ -1037,6 +1160,13 @@ async function saveNotificationPreferences(event) {
     preferences[key] = Boolean(elements.preferenceForm.elements[key]?.checked);
   });
   try {
+    if (useFirebase()) {
+      state.user = await firebaseClient.updatePreferences(preferences);
+      await loadPrivateData();
+      renderAll();
+      toast("Firebase notification preferences saved.");
+      return;
+    }
     const response = await apiFetch("/api/me", {
       method: "PATCH",
       body: { preferences }
@@ -1056,6 +1186,14 @@ async function changeAccountPassword(event) {
   const currentPassword = form.elements.currentPassword.value;
   const newPassword = form.elements.newPassword.value;
   try {
+    if (useFirebase()) {
+      await firebaseClient.changePassword({ currentPassword, newPassword });
+      form.reset();
+      await loadPrivateData();
+      renderAll();
+      toast("Firebase password changed.");
+      return;
+    }
     await apiFetch("/api/change-password", {
       method: "POST",
       body: { currentPassword, newPassword }
@@ -1071,6 +1209,14 @@ async function changeAccountPassword(event) {
 
 async function createDataBackup() {
   try {
+    if (useFirebase()) {
+      const response = await firebaseClient.createBackup();
+      elements.backupStatus.textContent = `Firestore backup point recorded: ${response.fileName}`;
+      await loadPrivateData();
+      renderAll();
+      toast("Firebase backup record created.");
+      return;
+    }
     const response = await apiFetch("/api/admin/backups", { method: "POST" });
     elements.backupStatus.textContent = `Backup created: ${response.backup.fileName}`;
     await loadPrivateData();
@@ -1083,8 +1229,8 @@ async function createDataBackup() {
 
 async function exportDataJson() {
   try {
-    const response = await apiFetch("/api/admin/export");
-    const blob = new Blob([JSON.stringify(response.export, null, 2)], { type: "application/json" });
+    const exportPayload = useFirebase() ? await firebaseClient.exportData() : (await apiFetch("/api/admin/export")).export;
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -1095,16 +1241,23 @@ async function exportDataJson() {
     URL.revokeObjectURL(url);
     await loadPrivateData();
     renderAll();
-    toast("Export prepared.");
+    toast(useFirebase() ? "Firebase export prepared." : "Export prepared.");
   } catch (error) {
     toast(error.message);
   }
 }
 
 async function logout() {
-  try {
-    await apiFetch("/api/logout", { method: "POST" });
-  } catch {
+  if (useFirebase()) {
+    try {
+      await firebaseClient.logout();
+    } catch {
+    }
+  } else {
+    try {
+      await apiFetch("/api/logout", { method: "POST" });
+    } catch {
+    }
   }
   state.token = "";
   state.user = null;
@@ -1124,6 +1277,14 @@ async function createShipment(event) {
   event.preventDefault();
   const form = event.currentTarget;
   try {
+    if (useFirebase()) {
+      const response = await firebaseClient.createShipment(formObject(form));
+      form.reset();
+      state.selectedShipment = response.shipment;
+      await refreshAll();
+      toast(`Created ${response.shipment.trackingId} in Firebase.`);
+      return;
+    }
     const response = await apiFetch("/api/shipments", {
       method: "POST",
       body: formObject(form)
@@ -1148,6 +1309,13 @@ async function updateShipment(event) {
     risk: data.risk
   };
   try {
+    if (useFirebase()) {
+      const response = await firebaseClient.updateShipment(trackingId, body);
+      state.selectedShipment = response.shipment;
+      await refreshAll();
+      toast(`Updated ${trackingId} in Firebase.`);
+      return;
+    }
     const response = await apiFetch(`/api/shipments/${encodeURIComponent(trackingId)}`, {
       method: "PATCH",
       body
@@ -1164,6 +1332,13 @@ async function advancePackage() {
   const trackingId = elements.adminShipmentSelect.value;
   if (!trackingId) return;
   try {
+    if (useFirebase()) {
+      const response = await firebaseClient.advanceShipment(trackingId);
+      state.selectedShipment = response.shipment;
+      await refreshAll();
+      toast(`${trackingId} advanced in Firebase.`);
+      return;
+    }
     const response = await apiFetch(`/api/shipments/${encodeURIComponent(trackingId)}/advance`, { method: "POST" });
     state.selectedShipment = response.shipment;
     await refreshAll();
@@ -1177,6 +1352,12 @@ async function notifyPackage() {
   const trackingId = elements.adminShipmentSelect.value;
   if (!trackingId) return;
   try {
+    if (useFirebase()) {
+      await firebaseClient.notifyShipment(trackingId);
+      await refreshAll();
+      toast(`Firebase email update recorded for ${trackingId}.`);
+      return;
+    }
     await apiFetch(`/api/shipments/${encodeURIComponent(trackingId)}/notify`, { method: "POST" });
     await refreshAll();
     toast(`Email update recorded for ${trackingId}.`);
@@ -1191,6 +1372,21 @@ async function sendCustomerMessage(event) {
   const message = form.elements.message.value.trim();
   if (!message) return;
   try {
+    if (useFirebase()) {
+      const response = state.selectedSupportConversationId
+        ? await firebaseClient.sendSupportReply(state.selectedSupportConversationId, message)
+        : await firebaseClient.createOrSendCustomerMessage({
+            subject: "Customer service request",
+            message
+          });
+      form.reset();
+      state.selectedSupportConversationId = response.conversation.id;
+      state.supportMessages = response.messages;
+      await loadPrivateData();
+      renderAll();
+      toast("Message sent through Firebase support.");
+      return;
+    }
     const path = state.selectedSupportConversationId
       ? `/api/support/conversations/${encodeURIComponent(state.selectedSupportConversationId)}/messages`
       : "/api/support/conversations";
@@ -1222,6 +1418,15 @@ async function sendAdminReply(event) {
   const message = form.elements.message.value.trim();
   if (!message) return;
   try {
+    if (useFirebase()) {
+      const response = await firebaseClient.sendSupportReply(state.selectedSupportConversationId, message);
+      form.reset();
+      state.supportMessages = response.messages;
+      await loadPrivateData();
+      renderAll();
+      toast("Firebase reply sent.");
+      return;
+    }
     const response = await apiFetch(`/api/support/conversations/${encodeURIComponent(state.selectedSupportConversationId)}/messages`, {
       method: "POST",
       body: { message }
@@ -1336,6 +1541,8 @@ async function boot() {
   if (localStorage.getItem(THEME_KEY) === "dark") {
     document.body.classList.add("dark");
   }
+  state.usingFirebase = await firebaseClient.init();
+  configureFirebaseUi();
   bindEvents();
   await refreshAll();
   resetPageScroll();

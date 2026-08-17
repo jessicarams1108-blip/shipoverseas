@@ -2,7 +2,7 @@
 
 ## Recommended Launch Path
 
-Use Render for the first live test because this app is currently a Node server with API routes for login, registration, shipments, password reset, email records, and support chat.
+Use Render for the first live test because this app includes a Node static server and Firebase-powered browser features for login, registration, shipments, password reset, email records, and support chat.
 
 The included `render.yaml` is set up for:
 
@@ -36,19 +36,9 @@ Optional production email variables:
 
 ## Important Data Note
 
-The prototype stores data in `db.json`. For a real public business app, move this to Firebase Firestore, Supabase Postgres, Neon Postgres, or another managed database.
+The app now uses Firebase project `shipoverseas-ca460` for live Auth and Firestore data when Firebase is reachable. The local `db.json` API remains as a fallback for local development and public demo data.
 
-If you deploy without a persistent disk or cloud database, new user accounts and package updates can disappear after a redeploy or restart.
-
-## Best Production Upgrade
-
-After the first live test, replace the JSON database with:
-
-- Firebase Authentication for user accounts and password reset emails
-- Firestore for shipments, email-update records, and support chat
-- A real email provider such as Resend, SendGrid, Mailgun, or Firebase extensions
-- Environment variables for secrets and provider keys
-- Admin rules that only allow `Hardewusi@gmail.com` to create/update packages
+If you deploy without Firebase rules published correctly, new customer accounts, package updates, and chats will not save to Firestore.
 
 ## Current Production-Ready Controls
 
@@ -57,10 +47,12 @@ The current Node version now includes:
 - Account detail updates from Profile
 - Password change from Profile
 - Customer notification preferences
-- Email-provider-ready message records
+- Firebase password reset emails
+- Firestore email-update records
 - Admin audit logs
-- Admin JSON export
-- Admin persistent-disk backup creation
+- Admin JSON export from Firestore
+- Admin backup audit records
+- Admin rules that only allow `Hardewusi@gmail.com` to create/update packages
 
 ## Vercel Path
 
@@ -68,16 +60,14 @@ Vercel is excellent for the frontend, but this exact Node server should not be d
 
 ## Firebase Path
 
-Firebase is the best fit once you want real customer accounts:
+Firebase is now wired into the frontend. Use [FIREBASE.md](./FIREBASE.md) for the exact security rules.
 
-1. Create a Firebase project.
-2. Enable Email/Password Authentication.
-3. Create Firestore collections:
+The active Firestore collections are:
+
    - `users`
    - `shipments`
-   - `emails`
-   - `supportConversations`
-4. Add security rules:
-   - Customers can read only their own shipments, emails, and support chats.
-   - Admin email `hardewusi@gmail.com` can create and update shipments.
-5. Connect email delivery for status updates and password resets.
+   - `supportChats`
+   - `emailUpdates`
+   - `auditLogs`
+
+Firebase sends real password reset emails. Shipment email updates are recorded in Firestore; connect Resend, SendGrid, Mailgun, Firebase Extensions, or Cloud Functions later if you want every shipment status update to send a real customer email automatically.
