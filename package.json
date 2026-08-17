@@ -9,6 +9,8 @@
     "start": "next start -p 3000",
     "shipoverseas:dev": "node shipoverseas/server.js",
     "shipoverseas:start": "node shipoverseas/server.js",
+    "shipoverseas:firebase:deploy": "npx firebase-tools deploy --only hosting",
+    "shipoverseas:firebase:preview": "npx firebase-tools hosting:channel:deploy preview",
     "lint": "next lint"
   },
   "dependencies": {
