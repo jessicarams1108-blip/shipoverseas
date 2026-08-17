@@ -1,0 +1,13 @@
+---
+description: Identify this workspace as Sea Cargo Tracker (marine), not SwiftTrack
+alwaysApply: true
+---
+
+# Sea Cargo Tracker (marine)
+
+This repository is **sea-cargo-tracker**: Next.js app with **Leaflet / marine sea cargo** tracking. **`package.json` name:** `sea-cargo-tracker`.
+
+**SwiftTrack** is a separate product (**road parcels**): use folder **`C:\dev\swifttrack`** or **`...\OneDrive\swifttrack`** only for SwiftTrack work.
+
+- **Local dev here:** **`npm run dev`** uses port **3000** → **http://localhost:3000/** (do not confuse with SwiftTrack’s **3001**).
+- Do not merge SwiftTrack UI or env into this repo unless the user explicitly asks for cross-project changes.

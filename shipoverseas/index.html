@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ShipOverseas Cargo Control</title>
+    <meta
+      name="description"
+      content="ShipOverseas sea cargo tracking portal with customer login, ocean route visibility, email updates, and container risk alerts."
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260817-settings-audit" />
+  </head>
+  <body>
+    <header class="topbar">
+      <button class="back-button" id="backButton" type="button" title="Go back" aria-label="Go back">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5m0 0 6-6m-6 6 6 6" />
+        </svg>
+      </button>
+      <a class="brand" href="#home" aria-label="ShipOverseas home">
+        <img src="./assets/shipoverseas-logo-clean.png" alt="ShipOverseas" />
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="#home">Home</a>
+        <a href="#tracking">Track</a>
+        <a href="#features">Features</a>
+        <a href="#portal">Portal</a>
+        <a class="admin-only hidden" href="#backend" data-admin-only>Ops</a>
+      </nav>
+      <div class="top-actions">
+        <button class="icon-button" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.36-6.36-1.42 1.42M7.06 16.94l-1.42 1.42m12.72 0-1.42-1.42M7.06 7.06 5.64 5.64" />
+            <circle cx="12" cy="12" r="4" />
+          </svg>
+        </button>
+        <div class="auth-summary" id="authSummary"></div>
+        <div class="profile-menu hidden" id="profileMenu" aria-label="Profile menu"></div>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section id="home" class="hero-band dashboard-surface" data-page="home" aria-label="ShipOverseas home">
+        <div class="hero-copy">
+          <img class="hero-logo" src="./assets/shipoverseas-logo-clean.png" alt="ShipOverseas" />
+          <p class="eyebrow">SEA FREIGHT CUSTOMER PORTAL</p>
+          <h1>Reliable ocean freight visibility from port departure to final release.</h1>
+          <p class="hero-subtitle">
+            ShipOverseas gives importers and logistics teams a polished control center for live vessel location,
+            container milestones, risk alerts, customer support, and delivery-ready notifications.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#tracking">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m21 21-4.35-4.35" />
+                <circle cx="11" cy="11" r="7" />
+              </svg>
+              Track Shipment
+            </a>
+            <a class="secondary-link" href="#portal">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 21a8 8 0 0 0-16 0" />
+                <circle cx="12" cy="8" r="4" />
+              </svg>
+              Customer Portal
+            </a>
+          </div>
+        </div>
+        <form class="tracking-card" id="heroTrackingForm">
+          <span class="card-tag">Live lookup</span>
+          <label for="heroTrackingInput">Tracking ID or Bill of Lading</label>
+          <div class="tracking-row">
+            <input id="heroTrackingInput" autocomplete="off" placeholder="SOVX2409181" />
+            <button class="primary-button" type="submit">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m21 21-4.35-4.35" />
+                <circle cx="11" cy="11" r="7" />
+              </svg>
+              Track
+            </button>
+          </div>
+          <p class="form-note" id="trackingMessage" role="status"></p>
+          <div class="quick-list" id="quickList" aria-label="Saved shipment shortcuts"></div>
+        </form>
+      </section>
+
+      <section class="metric-grid dashboard-surface" data-page="home" aria-label="Shipment metrics">
+        <article>
+          <span id="metricActive">0</span>
+          <p>Active voyages</p>
+        </article>
+        <article>
+          <span id="metricDelayed">0</span>
+          <p>Risk alerts</p>
+        </article>
+        <article>
+          <span id="metricCustomers">0</span>
+          <p>Customers</p>
+        </article>
+        <article>
+          <span id="metricEmails">0</span>
+          <p>Email updates</p>
+        </article>
+      </section>
+
+      <section id="tracking" class="workspace dashboard-surface" data-page="tracking">
+        <article class="detail-panel" aria-label="Selected shipment">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">CURRENT SHIPMENT</p>
+              <h2 id="detailTrackingId">-</h2>
+            </div>
+            <span class="status-pill" id="detailStatus">-</span>
+          </div>
+          <div class="route-title">
+            <strong id="detailRoute">-</strong>
+            <span id="detailEta">-</span>
+          </div>
+          <div class="progress-block">
+            <div class="progress-label">
+              <span>Voyage progress</span>
+              <strong id="detailProgressText">0%</strong>
+            </div>
+            <div class="progress-track" aria-hidden="true"><span id="detailProgressBar"></span></div>
+          </div>
+          <dl class="detail-list" id="detailList"></dl>
+        </article>
+
+        <article class="map-panel" aria-label="Route map">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">LIVE MAP</p>
+              <h2 id="mapRouteTitle">-</h2>
+            </div>
+            <span class="risk-chip" id="riskChip">-</span>
+          </div>
+          <div class="live-map">
+            <iframe id="liveMapFrame" title="Live shipment map" loading="lazy" referrerpolicy="no-referrer"></iframe>
+            <svg class="map-overlay" viewBox="0 0 680 360" role="img" aria-label="Live shipment route overlay">
+              <defs>
+                <linearGradient id="routeGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#ef3438" />
+                  <stop offset="52%" stop-color="#3148d4" />
+                  <stop offset="100%" stop-color="#f0b12f" />
+                </linearGradient>
+              </defs>
+              <path class="route-line" id="routeLine" d="" />
+              <circle class="port-dot" id="originDot" r="7" />
+              <circle class="port-dot destination" id="destinationDot" r="7" />
+              <circle class="ship-dot" id="shipDot" r="10" />
+              <text class="map-label" id="originLabel" x="0" y="0">Origin</text>
+              <text class="map-label" id="destinationLabel" x="0" y="0">Destination</text>
+            </svg>
+            <div class="live-map-badge">
+              <strong>Live position</strong>
+              <span id="liveMapStatus">Waiting for shipment data</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="timeline-panel dashboard-surface" data-page="tracking" aria-label="Shipment timeline">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">MILESTONES</p>
+            <h2>Container Status Timeline</h2>
+          </div>
+          <span id="lastUpdated">-</span>
+        </div>
+        <ol class="timeline" id="timeline"></ol>
+      </section>
+
+      <section id="features" class="feature-panel dashboard-surface" data-page="features" aria-label="Feature set">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">API-READY FEATURES</p>
+            <h2>What ShipOverseas can support</h2>
+          </div>
+        </div>
+        <div class="feature-grid">
+          <a href="#feature-container-tracking" data-feature-link="container-tracking">
+            <strong>Container Tracking API</strong>
+            <p>Track loaded, departed, arrived, discharged, and gate-out events by container or bill of lading.</p>
+          </a>
+          <a href="#feature-eta-etd-alerts" data-feature-link="eta-etd-alerts">
+            <strong>ETA and ETD Alerts</strong>
+            <p>Warn customers and operations teams when a sailing or arrival changes from the planned schedule.</p>
+          </a>
+          <a href="#feature-detention-demurrage" data-feature-link="detention-demurrage">
+            <strong>Detention and Demurrage</strong>
+            <p>Flag fees risk when containers stay too long at terminal or after free days.</p>
+          </a>
+          <a href="#feature-rolled-container" data-feature-link="rolled-container">
+            <strong>Rolled Container</strong>
+            <p>Show when a container missed the planned vessel and is moved to a later sailing.</p>
+          </a>
+          <a href="#feature-pickup-notice" data-feature-link="pickup-notice">
+            <strong>Pick-up Notice</strong>
+            <p>Notify the receiver when cargo is ready for release at the destination terminal.</p>
+          </a>
+          <a href="#feature-email-updates" data-feature-link="email-updates">
+            <strong>Email Updates</strong>
+            <p>Every status change creates a customer email record and can connect to a real email provider.</p>
+          </a>
+        </div>
+      </section>
+
+      <section id="featureDetail" class="feature-detail-page hidden" aria-label="Feature detail page"></section>
+
+      <section id="portal" class="portal-grid dashboard-surface" data-page="portal" aria-label="Customer portal">
+        <article class="auth-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">LOGIN</p>
+              <h2>Account Access</h2>
+            </div>
+          </div>
+          <div class="auth-tabs">
+            <button class="tab-button active" type="button" data-auth-tab="login">Login</button>
+            <button class="tab-button" type="button" data-auth-tab="register">Register</button>
+            <button class="tab-button" type="button" data-auth-tab="reset">Reset Password</button>
+          </div>
+          <form class="auth-form" id="loginForm">
+            <label>
+              Email
+              <input name="email" type="email" required placeholder="customer@example.com" />
+            </label>
+            <label>
+              Password
+              <input name="password" type="password" required placeholder="demo123" />
+            </label>
+            <button class="primary-button" type="submit">Login</button>
+            <div class="demo-logins">
+              <button class="secondary-button" type="button" data-demo="customer">Use Customer Demo</button>
+            </div>
+          </form>
+          <form class="auth-form hidden" id="registerForm">
+            <label>
+              Name
+              <input name="name" required placeholder="Your company name" />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" required placeholder="you@example.com" />
+            </label>
+            <label>
+              Password
+              <input name="password" type="password" required minlength="4" placeholder="Create password" />
+            </label>
+            <button class="primary-button" type="submit">Create Account</button>
+          </form>
+          <form class="auth-form hidden" id="resetForm">
+            <label>
+              Email
+              <input name="email" type="email" required placeholder="customer@example.com" />
+            </label>
+            <div class="button-row">
+              <button class="secondary-button" type="button" id="requestResetButton">Send Reset Code</button>
+            </div>
+            <label>
+              Reset Code
+              <input name="code" required inputmode="numeric" placeholder="6-digit code" />
+            </label>
+            <label>
+              New Password
+              <input name="password" type="password" required minlength="4" placeholder="New password" />
+            </label>
+            <button class="primary-button" type="submit">Update Password</button>
+            <p class="form-note" id="resetMessage" role="status"></p>
+          </form>
+          <p class="small-note">Use the customer portal to see shipments and email updates connected to your account.</p>
+        </article>
+
+        <article class="customer-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">CUSTOMER PORTAL</p>
+              <h2>My Shipments and Email Updates</h2>
+            </div>
+          </div>
+          <div class="empty-state" id="portalEmpty">Log in to view shipments assigned to your email.</div>
+          <div class="customer-content hidden" id="customerContent">
+            <div class="customer-shipments" id="customerShipments"></div>
+            <h3>Email Update Inbox</h3>
+            <div class="email-list" id="customerEmails"></div>
+            <div class="support-chat">
+              <div class="section-head compact">
+                <div>
+                  <p class="eyebrow">SUPPORT</p>
+                  <h3>Customer Service Chat</h3>
+                </div>
+                <span class="status-pill" id="customerSupportStatus">Ready</span>
+              </div>
+              <div class="chat-thread" id="customerChatMessages"></div>
+              <form class="chat-form" id="customerChatForm">
+                <input name="message" placeholder="Type your message to ShipOverseas support" required />
+                <button class="primary-button" type="submit">Send</button>
+              </form>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="profile" class="profile-page hidden dashboard-surface" data-page="profile" aria-label="Profile page">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">PROFILE</p>
+            <h2 id="profileTitle">My ShipOverseas Profile</h2>
+          </div>
+          <span class="status-pill" id="profileRole">Signed out</span>
+        </div>
+        <div class="profile-grid">
+          <article>
+            <span class="profile-avatar-large" id="profileAvatar">SO</span>
+            <h3 id="profileName">Guest</h3>
+            <p id="profileEmail">Log in to manage your shipment profile.</p>
+          </article>
+          <article>
+            <strong id="profileShipmentCount">0</strong>
+            <p>Visible shipments</p>
+          </article>
+          <article>
+            <strong id="profileEmailCount">0</strong>
+            <p>Email updates</p>
+          </article>
+          <article class="admin-only hidden" data-admin-only>
+            <strong>Ops Console</strong>
+            <p>Package create and update tools are available for this account.</p>
+            <a class="secondary-link" href="#backend">Open Ops</a>
+          </article>
+        </div>
+        <div class="profile-workspace">
+          <article class="profile-panel profile-panel-wide">
+            <div class="profile-panel-head">
+              <div>
+                <p class="eyebrow">ACCOUNT</p>
+                <h3>Account Details</h3>
+              </div>
+              <span class="status-pill" id="profileAccessLevel">Customer access</span>
+            </div>
+            <dl class="profile-details">
+              <div><dt>Email</dt><dd id="profileDetailEmail">-</dd></div>
+              <div><dt>Account created</dt><dd id="profileCreatedAt">-</dd></div>
+              <div><dt>Shipment scope</dt><dd id="profileScope">-</dd></div>
+              <div><dt>Admin rule</dt><dd id="profileAdminRule">Customer tools only</dd></div>
+            </dl>
+            <form class="profile-mini-form" id="profileSettingsForm">
+              <label>
+                Display name
+                <input name="name" id="profileNameInput" placeholder="Your name" required />
+              </label>
+              <button class="primary-button" type="submit">Save Account</button>
+            </form>
+          </article>
+
+          <article class="profile-panel">
+            <div class="profile-panel-head">
+              <div>
+                <p class="eyebrow">SECURITY</p>
+                <h3>Sign-in Settings</h3>
+              </div>
+            </div>
+            <ul class="profile-checklist">
+              <li><span></span>Password reset enabled</li>
+              <li><span></span>Session token active</li>
+              <li><span></span>Admin tools locked by email</li>
+            </ul>
+            <form class="profile-mini-form" id="passwordSettingsForm">
+              <label>
+                Current password
+                <input name="currentPassword" type="password" autocomplete="current-password" required />
+              </label>
+              <label>
+                New password
+                <input name="newPassword" type="password" autocomplete="new-password" minlength="6" required />
+              </label>
+              <button class="secondary-button" type="submit">Change Password</button>
+            </form>
+          </article>
+
+          <article class="profile-panel">
+            <div class="profile-panel-head">
+              <div>
+                <p class="eyebrow">NOTIFICATIONS</p>
+                <h3>Email Updates</h3>
+              </div>
+              <strong id="profileEmailStatus">On</strong>
+            </div>
+            <ul class="profile-checklist">
+              <li><span></span>Package created</li>
+              <li><span></span>Status changed</li>
+              <li><span></span>Password reset</li>
+            </ul>
+            <form class="preference-form" id="preferenceForm">
+              <label><input name="packageCreated" type="checkbox" /> Package created emails</label>
+              <label><input name="statusUpdates" type="checkbox" /> Status update emails</label>
+              <label><input name="riskAlerts" type="checkbox" /> Risk alert emails</label>
+              <label><input name="supportReplies" type="checkbox" /> Support reply emails</label>
+              <label><input name="weeklySummary" type="checkbox" /> Weekly summary</label>
+              <button class="secondary-button" type="submit">Save Preferences</button>
+            </form>
+          </article>
+
+          <article class="profile-panel">
+            <div class="profile-panel-head">
+              <div>
+                <p class="eyebrow">SHIPMENTS</p>
+                <h3>Shipment Access</h3>
+              </div>
+            </div>
+            <dl class="profile-details compact">
+              <div><dt>Latest shipment</dt><dd id="profileLatestShipment">-</dd></div>
+              <div><dt>Latest ETA</dt><dd id="profileLatestEta">-</dd></div>
+            </dl>
+            <a class="secondary-link" href="#tracking">Open Tracking</a>
+          </article>
+
+          <article class="profile-panel">
+            <div class="profile-panel-head">
+              <div>
+                <p class="eyebrow">SUPPORT</p>
+                <h3>Customer Service</h3>
+              </div>
+              <strong id="profileSupportCount">0</strong>
+            </div>
+            <p class="profile-note">Chat history stays connected to the signed-in customer profile.</p>
+            <a class="secondary-link" href="#portal">Open Chat</a>
+          </article>
+
+          <article class="profile-panel admin-only hidden" data-admin-only>
+            <div class="profile-panel-head">
+              <div>
+                <p class="eyebrow">OPERATIONS</p>
+                <h3>Admin Workspace</h3>
+              </div>
+            </div>
+            <ul class="profile-checklist">
+              <li><span></span>Create packages</li>
+              <li><span></span>Update package status</li>
+              <li><span></span>Respond to support chats</li>
+            </ul>
+            <a class="secondary-link" href="#backend">Open Ops Console</a>
+          </article>
+        </div>
+      </section>
+
+      <section id="backend" class="backend-panel admin-only hidden dashboard-surface" data-page="backend" aria-label="Operations backend" data-admin-only>
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">OPERATIONS</p>
+            <h2>Package Control</h2>
+          </div>
+          <span class="admin-lock" id="adminLock">Verified access</span>
+        </div>
+
+        <div class="backend-content" id="backendContent">
+          <form class="ops-form" id="shipmentForm">
+            <label>
+              Tracking ID
+              <input name="trackingId" required pattern="[A-Za-z]{4}[0-9]{7}" placeholder="SOVX1234567" />
+            </label>
+            <label>
+              Bill of Lading
+              <input name="billOfLading" required placeholder="BL-SOV-1234567" />
+            </label>
+            <label>
+              Receiver Name
+              <input name="receiverName" required placeholder="Maya Import Desk" />
+            </label>
+            <label>
+              Receiver Email
+              <input name="receiverEmail" type="email" required placeholder="customer@example.com" />
+            </label>
+            <label>
+              Container
+              <input name="container" required placeholder="SOU1234567" />
+            </label>
+            <label>
+              Vessel
+              <input name="vessel" required placeholder="MV Pacific Ledger" />
+            </label>
+            <label>
+              Origin Port
+              <input name="origin" required placeholder="Shanghai" />
+            </label>
+            <label>
+              Destination Port
+              <input name="destination" required placeholder="Los Angeles" />
+            </label>
+            <label>
+              Cargo
+              <input name="cargo" required placeholder="Electronics" />
+            </label>
+            <label>
+              ETA
+              <input name="eta" type="date" required />
+            </label>
+            <label>
+              Status
+              <select name="status" required id="statusSelect"></select>
+            </label>
+            <label>
+              Risk Note
+              <input name="risk" placeholder="On track" />
+            </label>
+            <button class="primary-button form-submit" type="submit">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Create Package
+            </button>
+          </form>
+
+          <div class="admin-grid">
+            <article>
+              <div class="section-head compact">
+                <div>
+                  <p class="eyebrow">UPDATE</p>
+                  <h3>Update Package</h3>
+                </div>
+              </div>
+              <form class="update-form" id="updateForm">
+                <label>
+                  Package
+                  <select name="trackingId" id="adminShipmentSelect"></select>
+                </label>
+                <label>
+                  Status
+                  <select name="status" id="updateStatusSelect"></select>
+                </label>
+                <label>
+                  ETA
+                  <input name="eta" type="date" />
+                </label>
+                <label>
+                  Location
+                  <input name="locationName" placeholder="Current location" />
+                </label>
+                <label>
+                  Risk Note
+                  <input name="risk" placeholder="ETA delay, detention watch, etc." />
+                </label>
+                <div class="button-row">
+                  <button class="primary-button" type="submit">Save Update</button>
+                  <button class="secondary-button" id="advancePackage" type="button">Advance Status</button>
+                  <button class="secondary-button" id="notifyPackage" type="button">Send Email Update</button>
+                </div>
+              </form>
+            </article>
+
+            <article>
+              <div class="section-head compact">
+                <div>
+                  <p class="eyebrow">EMAIL</p>
+                  <h3>Email Outbox</h3>
+                </div>
+              </div>
+              <div class="email-list admin-email-list" id="adminEmails"></div>
+              <p class="small-note">
+                Emails are simulated locally unless `RESEND_API_KEY` and `EMAIL_FROM` are set in production.
+              </p>
+            </article>
+
+            <article>
+              <div class="section-head compact">
+                <div>
+                  <p class="eyebrow">BACKUP</p>
+                  <h3>Data & Audit</h3>
+                </div>
+              </div>
+              <div class="button-row">
+                <button class="secondary-button" id="createBackupButton" type="button">Create Backup</button>
+                <button class="secondary-button" id="exportDataButton" type="button">Export JSON</button>
+              </div>
+              <p class="small-note" id="backupStatus">Backups are stored on the configured persistent data disk.</p>
+              <div class="audit-list" id="auditLogList"></div>
+            </article>
+
+            <article class="support-desk">
+              <div class="section-head compact">
+                <div>
+                  <p class="eyebrow">SUPPORT</p>
+                  <h3>Customer Service Desk</h3>
+                </div>
+                <span class="status-pill" id="supportDeskCount">0 open</span>
+              </div>
+              <div class="support-desk-layout">
+                <div class="conversation-list" id="supportConversationList"></div>
+                <div class="conversation-panel">
+                  <div class="conversation-title" id="supportConversationTitle">Select a conversation</div>
+                  <div class="chat-thread admin-chat-thread" id="adminChatMessages"></div>
+                  <form class="chat-form" id="adminChatForm">
+                    <input name="message" placeholder="Reply to customer" required />
+                    <button class="primary-button" type="submit">Reply</button>
+                  </form>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="fleet-panel dashboard-surface" data-page="tracking" aria-label="Fleet table">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">FLEET</p>
+            <h2>Container Voyages</h2>
+          </div>
+          <input id="fleetFilter" placeholder="Filter voyages" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tracking</th>
+                <th>Receiver</th>
+                <th>Route</th>
+                <th>Status</th>
+                <th>ETA</th>
+                <th>Progress</th>
+              </tr>
+            </thead>
+            <tbody id="fleetRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <img src="./assets/shipoverseas-logo-clean.png" alt="ShipOverseas" />
+      <p>ShipOverseas Cargo Control - container tracking, customer notifications, and ocean route visibility.</p>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js?v=20260817-settings-audit"></script>
+  </body>
+</html>

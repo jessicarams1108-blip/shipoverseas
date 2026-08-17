@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: shipoverseas
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run shipoverseas:start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: SHIPOVERSEAS_DATA_DIR
+        value: /var/data/shipoverseas
+    disk:
+      name: shipoverseas-data
+      mountPath: /var/data
+      sizeGB: 1
