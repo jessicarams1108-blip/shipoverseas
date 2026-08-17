@@ -9,5 +9,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .vercel
+.firebase/
 shipoverseas/data/db.json
 shipoverseas/data/backups/
