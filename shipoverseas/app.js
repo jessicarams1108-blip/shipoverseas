@@ -1206,8 +1206,9 @@ async function handleTrackingSubmit(event) {
       const existing = state.shipments.find((item) => item.trackingId === shipment.trackingId);
       if (!existing) state.shipments.unshift(shipment);
       elements.trackingMessage.textContent = "";
+      navigateToHash("#tracking");
       renderAll();
-      toast(`Loaded ${shipment.trackingId}`);
+      toast(`Opened tracking for ${shipment.trackingId}`);
       return;
     }
     const data = await apiFetch(`/api/track/${encodeURIComponent(trackingId)}`);
@@ -1215,8 +1216,9 @@ async function handleTrackingSubmit(event) {
     const existing = state.shipments.find((shipment) => shipment.trackingId === data.shipment.trackingId);
     if (!existing) state.shipments.unshift(data.shipment);
     elements.trackingMessage.textContent = "";
+    navigateToHash("#tracking");
     renderAll();
-    toast(`Loaded ${data.shipment.trackingId}`);
+    toast(`Opened tracking for ${data.shipment.trackingId}`);
   } catch (error) {
     elements.trackingMessage.textContent = error.message;
   }
