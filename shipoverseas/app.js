@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-cargo-details";
+import { firebaseClient } from "./firebase-client.js?v=20260818-profile-reset";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -168,6 +168,8 @@ const state = {
 const elements = {
   backButton: document.querySelector("#backButton"),
   themeToggle: document.querySelector("#themeToggle"),
+  portalGrid: document.querySelector("#portal"),
+  authPanel: document.querySelector(".auth-panel"),
   authSummary: document.querySelector("#authSummary"),
   profileMenu: document.querySelector("#profileMenu"),
   profilePage: document.querySelector("#profile"),
@@ -181,6 +183,8 @@ const elements = {
   profileSettingsForm: document.querySelector("#profileSettingsForm"),
   profileNameInput: document.querySelector("#profileNameInput"),
   passwordSettingsForm: document.querySelector("#passwordSettingsForm"),
+  profileResetPasswordButton: document.querySelector("#profileResetPasswordButton"),
+  profileSecurityMessage: document.querySelector("#profileSecurityMessage"),
   preferenceForm: document.querySelector("#preferenceForm"),
   profileAccessLevel: document.querySelector("#profileAccessLevel"),
   profileDetailEmail: document.querySelector("#profileDetailEmail"),
@@ -851,6 +855,8 @@ function renderFleet() {
 
 function renderCustomerPortal() {
   const loggedIn = Boolean(state.user);
+  elements.authPanel?.classList.toggle("hidden", loggedIn);
+  elements.portalGrid?.classList.toggle("signed-in", loggedIn);
   elements.portalEmpty.classList.toggle("hidden", loggedIn);
   elements.customerContent.classList.toggle("hidden", !loggedIn);
   if (!loggedIn) return;
@@ -940,6 +946,9 @@ function renderProfilePage() {
   elements.profileLatestEta.textContent = latestShipment ? formatDate(latestShipment.eta) : "-";
   elements.profileSupportCount.textContent = state.supportConversations.length;
   elements.profileNameInput.value = state.user.name || "";
+  if (elements.profileSecurityMessage && !elements.profileSecurityMessage.textContent) {
+    elements.profileSecurityMessage.textContent = "";
+  }
   const preferences = {
     packageCreated: true,
     statusUpdates: true,
@@ -1405,6 +1414,43 @@ async function requestPasswordReset() {
   }
 }
 
+async function sendProfilePasswordReset(event) {
+  const button = event.currentTarget;
+  const email = state.user?.email || "";
+  if (!email) {
+    toast("Log in first to reset your password from profile settings.");
+    return;
+  }
+  if (elements.profileSecurityMessage) {
+    elements.profileSecurityMessage.textContent = "";
+  }
+  button.disabled = true;
+  button.textContent = "Sending reset...";
+  try {
+    requireAvailableBackend();
+    if (useFirebase()) {
+      const response = await firebaseClient.requestPasswordReset(email);
+      elements.profileSecurityMessage.textContent = response.message;
+      toast("Password reset email sent.");
+      return;
+    }
+    const response = await apiFetch("/api/password-reset/request", {
+      method: "POST",
+      body: { email }
+    });
+    elements.profileSecurityMessage.textContent = response.localCode
+      ? `Local reset code: ${response.localCode}`
+      : response.message;
+    toast("Password reset instructions sent.");
+  } catch (error) {
+    elements.profileSecurityMessage.textContent = error.message;
+    toast(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Send Password Reset Email";
+  }
+}
+
 async function confirmPasswordReset(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -1827,6 +1873,7 @@ function bindEvents() {
   elements.resetAdminPasswordButton?.addEventListener("click", fillAdminReset);
   elements.profileSettingsForm.addEventListener("submit", saveProfileSettings);
   elements.passwordSettingsForm.addEventListener("submit", changeAccountPassword);
+  elements.profileResetPasswordButton?.addEventListener("click", sendProfilePasswordReset);
   elements.preferenceForm.addEventListener("submit", saveNotificationPreferences);
   elements.customerChatForm.addEventListener("submit", sendCustomerMessage);
   elements.adminChatForm.addEventListener("submit", sendAdminReply);

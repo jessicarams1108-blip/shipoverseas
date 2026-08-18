@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20260818-cargo-details" />
+    <link rel="stylesheet" href="./styles.css?v=20260818-profile-reset" />
   </head>
   <body>
     <header class="topbar">
@@ -461,6 +461,10 @@
               </label>
               <button class="secondary-button" type="submit">Change Password</button>
             </form>
+            <div class="profile-security-actions">
+              <button class="secondary-button" type="button" id="profileResetPasswordButton">Send Password Reset Email</button>
+              <p class="form-note" id="profileSecurityMessage" role="status"></p>
+            </div>
           </article>
 
           <article class="profile-panel">
@@ -848,6 +852,6 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20260818-cargo-details"></script>
+    <script type="module" src="./app.js?v=20260818-profile-reset"></script>
   </body>
 </html>

@@ -2105,6 +2105,10 @@ textarea::placeholder {
   align-items: start;
 }
 
+.portal-grid.signed-in {
+  grid-template-columns: 1fr;
+}
+
 .auth-panel {
   overflow: hidden;
   padding: 0;
@@ -2266,6 +2270,19 @@ textarea::placeholder {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.profile-security-actions {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.profile-security-actions .secondary-button {
+  width: 100%;
+}
+
+.profile-security-actions .form-note {
+  margin: 0;
 }
 
 .admin-access-card {
