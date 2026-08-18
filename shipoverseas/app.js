@@ -1,28 +1,20 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-customer-tracking";
+import { firebaseClient } from "./firebase-client.js?v=20260818-current-pin-map";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
 const THEME_KEY = "shipoverseas.theme";
-
-const portCoordinates = {
-  Shanghai: { x: 136, y: 152 },
-  Singapore: { x: 195, y: 222 },
-  Rotterdam: { x: 552, y: 112 },
-  "Los Angeles": { x: 120, y: 205 },
-  Hamburg: { x: 548, y: 96 },
-  "New York": { x: 520, y: 166 },
-  Savannah: { x: 496, y: 205 },
-  Busan: { x: 158, y: 142 },
-  Valencia: { x: 508, y: 154 },
-  "Port Klang": { x: 213, y: 225 }
-};
 
 const portGeo = {
   Shanghai: { lat: 31.2304, lon: 121.4737 },
   Singapore: { lat: 1.3521, lon: 103.8198 },
   Rotterdam: { lat: 51.9244, lon: 4.4777 },
   "Los Angeles": { lat: 33.7405, lon: -118.2775 },
+  Miami: { lat: 25.7781, lon: -80.1794 },
+  Houston: { lat: 29.7604, lon: -95.3698 },
+  Jacksonville: { lat: 30.3322, lon: -81.6557 },
+  Baltimore: { lat: 39.2904, lon: -76.6122 },
   Hamburg: { lat: 53.5511, lon: 9.9937 },
+  Bremerhaven: { lat: 53.5396, lon: 8.5809 },
   "New York": { lat: 40.7128, lon: -74.006 },
   Savannah: { lat: 32.0809, lon: -81.0912 },
   Busan: { lat: 35.1796, lon: 129.0756 },
@@ -215,12 +207,6 @@ const elements = {
   detailList: document.querySelector("#detailList"),
   mapRouteTitle: document.querySelector("#mapRouteTitle"),
   riskChip: document.querySelector("#riskChip"),
-  routeLine: document.querySelector("#routeLine"),
-  originDot: document.querySelector("#originDot"),
-  destinationDot: document.querySelector("#destinationDot"),
-  shipDot: document.querySelector("#shipDot"),
-  originLabel: document.querySelector("#originLabel"),
-  destinationLabel: document.querySelector("#destinationLabel"),
   liveMapFrame: document.querySelector("#liveMapFrame"),
   liveMapStatus: document.querySelector("#liveMapStatus"),
   lastUpdated: document.querySelector("#lastUpdated"),
@@ -402,43 +388,6 @@ function setFormBusy(form, busy, busyLabel = "Working...") {
   button.textContent = busy ? busyLabel : button.dataset.readyLabel;
 }
 
-function routePoint(portName, fallback) {
-  return portCoordinates[portName] || fallback;
-}
-
-function makeRoutePath(origin, destination) {
-  const midA = { x: origin.x + (destination.x - origin.x) * 0.32, y: Math.min(origin.y, destination.y) - 70 };
-  const midB = { x: origin.x + (destination.x - origin.x) * 0.68, y: Math.max(origin.y, destination.y) + 64 };
-  return `M ${origin.x} ${origin.y} C ${midA.x} ${midA.y}, ${midB.x} ${midB.y}, ${destination.x} ${destination.y}`;
-}
-
-function cubicPoint(start, controlA, controlB, end, progress) {
-  const t = Math.max(0, Math.min(1, progress));
-  const mt = 1 - t;
-  return {
-    x: mt ** 3 * start.x + 3 * mt ** 2 * t * controlA.x + 3 * mt * t ** 2 * controlB.x + t ** 3 * end.x,
-    y: mt ** 3 * start.y + 3 * mt ** 2 * t * controlA.y + 3 * mt * t ** 2 * controlB.y + t ** 3 * end.y
-  };
-}
-
-function currentShipPoint(origin, destination, progress) {
-  const midA = { x: origin.x + (destination.x - origin.x) * 0.32, y: Math.min(origin.y, destination.y) - 70 };
-  const midB = { x: origin.x + (destination.x - origin.x) * 0.68, y: Math.max(origin.y, destination.y) + 64 };
-  return cubicPoint(origin, midA, midB, destination, progress / 100);
-}
-
-function routeGeo(portName, fallback) {
-  return portGeo[portName] || fallback;
-}
-
-function currentGeoPoint(origin, destination, progress) {
-  const ratio = Math.max(0, Math.min(1, progress / 100));
-  return {
-    lat: origin.lat + (destination.lat - origin.lat) * ratio,
-    lon: origin.lon + (destination.lon - origin.lon) * ratio
-  };
-}
-
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -479,31 +428,40 @@ function currentLocationName(shipment) {
   return shipment?.currentLocationName || shipment?.locationName || shipment?.origin || shipment?.status || "Location updating";
 }
 
-function currentGeoForShipment(shipment, progress) {
+function knownGeoForLocation(locationName) {
+  const text = String(locationName || "").trim().toLowerCase();
+  if (!text) return null;
+  const entries = Object.entries(portGeo);
+  const exact = entries.find(([name]) => name.toLowerCase() === text);
+  if (exact) return exact[1];
+  const partial = entries.find(([name]) => text.includes(name.toLowerCase()) || name.toLowerCase().includes(text));
+  return partial?.[1] || null;
+}
+
+function currentGeoForShipment(shipment) {
   const lat = numberOrNull(shipment?.currentLatitude);
   const lon = numberOrNull(shipment?.currentLongitude);
   if (lat !== null && lon !== null) {
-    return { lat, lon };
+    return { lat, lon, source: "coordinates" };
   }
-  const origin = routeGeo(shipment.origin, { lat: 20, lon: -20 });
-  const destination = routeGeo(shipment.destination, { lat: 34, lon: 20 });
-  return currentGeoPoint(origin, destination, progress);
+  const known = knownGeoForLocation(currentLocationName(shipment));
+  return known ? { ...known, source: "known-location" } : null;
 }
 
 function multilineHtml(value) {
   return escapeHtml(value || "").replace(/\n/g, "<br>");
 }
 
-function makeMapEmbedUrl(shipment, progress) {
-  const origin = routeGeo(shipment.origin, { lat: 20, lon: -20 });
-  const destination = routeGeo(shipment.destination, { lat: 34, lon: 20 });
-  const current = currentGeoForShipment(shipment, progress);
-  const minLon = clamp(Math.min(origin.lon, destination.lon, current.lon) - 8, -179, 179);
-  const maxLon = clamp(Math.max(origin.lon, destination.lon, current.lon) + 8, -179, 179);
-  const minLat = clamp(Math.min(origin.lat, destination.lat, current.lat) - 6, -80, 84);
-  const maxLat = clamp(Math.max(origin.lat, destination.lat, current.lat) + 6, -80, 84);
+function makeMapEmbedUrl(shipment) {
+  const current = currentGeoForShipment(shipment);
+  if (!current) return "";
   const markerLat = clamp(current.lat, -80, 84).toFixed(4);
   const markerLon = clamp(current.lon, -179, 179).toFixed(4);
+  const zoomRange = current.source === "coordinates" ? 0.045 : 0.12;
+  const minLon = clamp(current.lon - zoomRange, -179, 179);
+  const maxLon = clamp(current.lon + zoomRange, -179, 179);
+  const minLat = clamp(current.lat - zoomRange, -80, 84);
+  const maxLat = clamp(current.lat + zoomRange, -80, 84);
   const bbox = [minLon, minLat, maxLon, maxLat].map((value) => value.toFixed(4)).join("%2C");
   return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${markerLat}%2C${markerLon}`;
 }
@@ -772,35 +730,26 @@ function renderDetails() {
 function renderMap() {
   const shipment = state.selectedShipment;
   if (!shipment) {
-    elements.mapRouteTitle.textContent = "Shipment route";
+    elements.mapRouteTitle.textContent = "Current package location";
     elements.riskChip.textContent = "Waiting";
     elements.riskChip.className = "risk-chip";
-    elements.liveMapStatus.textContent = "Log in or search a tracking number to view route data";
+    elements.liveMapFrame.removeAttribute("src");
+    elements.liveMapStatus.textContent = "Log in or search a tracking number to view the live location pin";
     return;
   }
-  const origin = routePoint(shipment.origin, { x: 150, y: 170 });
-  const destination = routePoint(shipment.destination, { x: 530, y: 175 });
-  const progress = shipmentProgress(shipment);
-  const ship = currentShipPoint(origin, destination, progress);
-  const mapUrl = makeMapEmbedUrl(shipment, progress);
-  if (elements.liveMapFrame.src !== mapUrl) {
+  const mapUrl = makeMapEmbedUrl(shipment);
+  if (mapUrl && elements.liveMapFrame.src !== mapUrl) {
     elements.liveMapFrame.src = mapUrl;
+  } else if (!mapUrl) {
+    elements.liveMapFrame.removeAttribute("src");
   }
   const coordinates = formatCoordinates(shipment);
-  elements.liveMapStatus.textContent = `${currentLocationName(shipment)}${coordinates === "-" ? "" : ` - ${coordinates}`} - ${formatDateTime(shipment.currentLocationUpdatedAt || shipment.lastUpdated)}`;
-  elements.routeLine.setAttribute("d", makeRoutePath(origin, destination));
-  elements.originDot.setAttribute("cx", origin.x);
-  elements.originDot.setAttribute("cy", origin.y);
-  elements.destinationDot.setAttribute("cx", destination.x);
-  elements.destinationDot.setAttribute("cy", destination.y);
-  elements.shipDot.setAttribute("cx", ship.x);
-  elements.shipDot.setAttribute("cy", ship.y);
-  elements.originLabel.setAttribute("x", origin.x + 12);
-  elements.originLabel.setAttribute("y", origin.y - 12);
-  elements.destinationLabel.setAttribute("x", destination.x - 104);
-  elements.destinationLabel.setAttribute("y", destination.y - 12);
-  elements.originLabel.textContent = shipment.origin;
-  elements.destinationLabel.textContent = shipment.destination;
+  const updatedAt = formatDateTime(shipment.currentLocationUpdatedAt || shipment.lastUpdated);
+  elements.mapRouteTitle.textContent = currentLocationName(shipment);
+  elements.liveMapStatus.textContent =
+    coordinates === "-"
+      ? `Current location: ${currentLocationName(shipment)}. Add latitude and longitude in Ops for an exact map pin. Updated ${updatedAt}`
+      : `Pinned at ${coordinates}. Updated ${updatedAt}`;
 }
 
 function renderTimeline() {

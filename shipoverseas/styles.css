@@ -814,8 +814,7 @@ body.dark .live-map {
   background: linear-gradient(145deg, #151d34, #18233a 50%, #301b26);
 }
 
-.live-map iframe,
-.map-overlay {
+.live-map iframe {
   position: absolute;
   inset: 0;
   display: block;
@@ -826,11 +825,6 @@ body.dark .live-map {
 .live-map iframe {
   border: 0;
   filter: saturate(0.85) contrast(0.96);
-}
-
-.map-overlay {
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(245, 247, 252, 0.08), rgba(245, 247, 252, 0.2));
 }
 
 .live-map-badge {
@@ -862,49 +856,6 @@ body.dark .live-map {
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 800;
-}
-
-.map-grid-line {
-  fill: none;
-  stroke: rgba(47, 69, 214, 0.18);
-  stroke-width: 1;
-}
-
-.land {
-  fill: rgba(236, 52, 57, 0.12);
-}
-
-.route-line {
-  fill: none;
-  stroke: url("#routeGradient");
-  stroke-linecap: round;
-  stroke-width: 6;
-  filter: drop-shadow(0 3px 7px rgba(23, 32, 51, 0.28));
-}
-
-.port-dot {
-  fill: var(--surface);
-  stroke: var(--blue);
-  stroke-width: 4;
-}
-
-.port-dot.destination {
-  stroke: var(--red);
-}
-
-.ship-dot {
-  fill: var(--red);
-  stroke: #ffffff;
-  stroke-width: 4;
-}
-
-.map-label {
-  fill: #102038;
-  paint-order: stroke;
-  stroke: rgba(255, 255, 255, 0.92);
-  stroke-width: 4px;
-  font-size: 14px;
-  font-weight: 900;
 }
 
 .timeline-panel,
