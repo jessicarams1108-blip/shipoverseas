@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-profile-reset";
+import { firebaseClient } from "./firebase-client.js?v=20260818-customer-tracking";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -1186,6 +1186,8 @@ function syncUpdateForm() {
   const shipment = state.selectedShipment;
   elements.adminShipmentSelect.value = shipment.trackingId;
   elements.updateStatusSelect.value = shipment.status;
+  elements.updateForm.elements.receiverName.value = shipment.receiverName || "";
+  elements.updateForm.elements.receiverEmail.value = shipment.receiverEmail || "";
   elements.updateForm.elements.eta.value = shipment.eta || "";
   elements.updateForm.elements.currentLocationName.value = currentLocationName(shipment);
   elements.updateForm.elements.currentLatitude.value = shipment.currentLatitude || "";
@@ -1246,7 +1248,10 @@ async function handleTrackingSubmit(event) {
   if (!trackingId) return;
   try {
     requireAvailableBackend();
-    if (useFirebase() && state.user) {
+    if (useFirebase() && !state.user) {
+      throw new Error("Log in or create a customer account to track live shipments.");
+    }
+    if (useFirebase()) {
       const shipment = await firebaseClient.findShipment(trackingId);
       state.selectedShipment = shipment;
       const existing = state.shipments.find((item) => item.trackingId === shipment.trackingId);
@@ -1660,6 +1665,8 @@ async function updateShipment(event) {
   const data = formObject(event.currentTarget);
   const trackingId = data.trackingId;
   const body = {
+    receiverName: data.receiverName,
+    receiverEmail: data.receiverEmail,
     status: data.status,
     eta: data.eta,
     currentLocationName: data.currentLocationName,

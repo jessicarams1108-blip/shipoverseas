@@ -578,6 +578,13 @@ select:focus {
   font-weight: 800;
 }
 
+.field-note {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
 .quick-list,
 .demo-logins,
 .button-row {

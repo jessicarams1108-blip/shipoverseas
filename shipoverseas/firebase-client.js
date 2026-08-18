@@ -405,10 +405,12 @@ async function findShipment(lookup) {
   const normalizedLookup = String(lookup || "").trim().toUpperCase();
   const shipments = await listShipments();
   const found = shipments.find((shipment) => shipment.trackingId === normalizedLookup || shipment.billOfLading === normalizedLookup);
-  if (!found) {
-    throw new Error(isAdminEmail(user.email) ? "Shipment not found." : "Shipment not found for this account.");
-  }
-  return found;
+  if (found) return found;
+  throw new Error(
+    isAdminEmail(user.email)
+      ? "Shipment not found."
+      : `Shipment not found for ${normalizeEmail(user.email)}. Ask operations to set Receiver Email to this login email, then search the exact tracking ID again.`
+  );
 }
 
 async function createEmailUpdate(shipment, reason, preferenceKey = "statusUpdates") {

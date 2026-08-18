@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20260818-profile-reset" />
+    <link rel="stylesheet" href="./styles.css?v=20260818-customer-tracking" />
   </head>
   <body>
     <header class="topbar">
@@ -559,6 +559,7 @@
             <label>
               Receiver Email
               <input name="receiverEmail" type="email" required placeholder="customer@example.com" />
+              <small class="field-note">Use the exact email the customer uses to log in. This assigns the package to their portal.</small>
             </label>
             <label>
               Container
@@ -681,6 +682,15 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
                 <label>
                   Package
                   <select name="trackingId" id="adminShipmentSelect"></select>
+                </label>
+                <label>
+                  Receiver Name
+                  <input name="receiverName" placeholder="Customer or company name" />
+                </label>
+                <label>
+                  Receiver Email
+                  <input name="receiverEmail" type="email" placeholder="customer@example.com" />
+                  <small class="field-note">This must match the customer login email for the shipment to appear in their portal.</small>
                 </label>
                 <label>
                   Status
@@ -852,6 +862,6 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20260818-profile-reset"></script>
+    <script type="module" src="./app.js?v=20260818-customer-tracking"></script>
   </body>
 </html>
