@@ -1,5 +1,6 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-auth-persist";
+import { firebaseClient } from "./firebase-client.js?v=20260818-tools-auth";
 
+const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
 const THEME_KEY = "shipoverseas.theme";
 
@@ -71,6 +72,79 @@ const featurePages = {
     summary: "Record customer messages and shipment notification history in one account-based workspace.",
     highlights: ["Customer support chat", "Shipment notification history", "Password reset emails", "Provider-ready path for SMTP, Resend, or SendGrid"],
     workflow: ["Create status event", "Record customer message", "Store notification history", "Reply through support desk"]
+  }
+};
+
+const toolPages = {
+  "logistics-explorer": {
+    eyebrow: "Planning Tool",
+    title: "Logistics Explorer",
+    summary: "A planning workspace for comparing ocean routes, carrier options, port touchpoints, and shipment notes before a package is created.",
+    highlights: ["Route comparison", "Carrier and port planning", "Customer-facing shipment notes"],
+    workflow: ["Choose origin and destination", "Review route and timing options", "Attach notes to the customer shipment plan"]
+  },
+  "container-tracking": {
+    eyebrow: "Visibility Tool",
+    title: "Container Tracking",
+    summary: "Search tracking IDs, bill of lading references, and container records linked to a customer account.",
+    highlights: ["Tracking ID lookup", "Bill of lading lookup", "Container milestone timeline"],
+    workflow: ["Enter the reference", "Match the shipment record", "Show status, ETA, route, and support history"]
+  },
+  "air-tracking": {
+    eyebrow: "Multimodal Tool",
+    title: "Air Tracking",
+    summary: "A ready page for future air cargo references when a customer shipment includes air freight movement.",
+    highlights: ["Air waybill-ready layout", "Airport origin and destination fields", "Future multimodal support"],
+    workflow: ["Capture air shipment reference", "Attach route notes", "Keep customer updates in the portal"]
+  },
+  "ship-schedules": {
+    eyebrow: "Schedule Tool",
+    title: "Ship Schedules",
+    summary: "Plan vessel departures, arrival windows, and schedule changes for ocean freight shipments.",
+    highlights: ["ETA and ETD planning", "Sailing window notes", "Delay watch labels"],
+    workflow: ["Select route", "Review sailing window", "Create or update customer shipment"]
+  },
+  "logistics-map": {
+    eyebrow: "Map Tool",
+    title: "Logistics Map",
+    summary: "A route map workspace for showing shipment movement, current location, and port-to-port context.",
+    highlights: ["Live route frame", "Origin and destination markers", "Progress overlay"],
+    workflow: ["Load shipment", "Render route", "Update current location and risk note"]
+  },
+  "distance-time": {
+    eyebrow: "Estimator",
+    title: "Distance and Time",
+    summary: "Estimate transit windows and milestone timing for common sea freight lanes.",
+    highlights: ["Transit window planning", "Milestone sequencing", "Customer ETA context"],
+    workflow: ["Choose route", "Estimate transit days", "Use timing in shipment updates"]
+  },
+  "load-calculator": {
+    eyebrow: "Cargo Tool",
+    title: "Load Calculator",
+    summary: "Plan shipment volume, weight, container loading notes, and capacity requirements.",
+    highlights: ["Package dimensions", "Weight and volume notes", "Container load planning"],
+    workflow: ["Enter cargo details", "Review capacity notes", "Send package details to operations"]
+  },
+  "freight-index": {
+    eyebrow: "Market Tool",
+    title: "Freight Index",
+    summary: "Track internal freight lane pressure, cost notes, and market movement for planning conversations.",
+    highlights: ["Lane pressure notes", "Market condition labels", "Operations-ready cost context"],
+    workflow: ["Review lane", "Record market note", "Use notes for customer communication"]
+  },
+  "route-planner": {
+    eyebrow: "Route Tool",
+    title: "Route Planner",
+    summary: "Build an origin-to-destination movement plan before operations creates the shipment record.",
+    highlights: ["Origin and destination planning", "Port transfer notes", "Shipment handoff checklist"],
+    workflow: ["Create route plan", "Confirm cargo details", "Open Ops to create the package"]
+  },
+  "co2-calculator": {
+    eyebrow: "Sustainability Tool",
+    title: "CO2 Calculator",
+    summary: "Estimate emissions context for sea, air, and inland freight movement.",
+    highlights: ["Mode comparison", "Emission estimate notes", "Customer sustainability context"],
+    workflow: ["Select transport mode", "Estimate shipment impact", "Attach note to customer update"]
   }
 };
 
@@ -150,6 +224,8 @@ const elements = {
   registerForm: document.querySelector("#registerForm"),
   resetForm: document.querySelector("#resetForm"),
   requestResetButton: document.querySelector("#requestResetButton"),
+  fillAdminEmailButton: document.querySelector("#fillAdminEmailButton"),
+  resetAdminPasswordButton: document.querySelector("#resetAdminPasswordButton"),
   authMessage: document.querySelector("#authMessage"),
   resetMessage: document.querySelector("#resetMessage"),
   localResetOnly: document.querySelectorAll("[data-local-reset-only]"),
@@ -180,6 +256,7 @@ const elements = {
   adminChatMessages: document.querySelector("#adminChatMessages"),
   adminChatForm: document.querySelector("#adminChatForm"),
   featureDetail: document.querySelector("#featureDetail"),
+  toolDetail: document.querySelector("#toolDetail"),
   fleetFilter: document.querySelector("#fleetFilter"),
   fleetRows: document.querySelector("#fleetRows"),
   toast: document.querySelector("#toast")
@@ -816,11 +893,47 @@ function renderFeatureDetail() {
   `;
 }
 
+function renderToolDetail() {
+  const toolId = window.location.hash.replace("#tool-", "");
+  const page = toolPages[toolId];
+  elements.toolDetail.classList.toggle("hidden", !page);
+  if (!page) return;
+
+  const opensTracking = toolId === "container-tracking" || toolId === "logistics-map";
+  elements.toolDetail.innerHTML = `
+    <div class="feature-hero tool-hero">
+      <p class="eyebrow">${escapeHtml(page.eyebrow)}</p>
+      <h2>${escapeHtml(page.title)}</h2>
+      <p>${escapeHtml(page.summary)}</p>
+    </div>
+    <div class="feature-page-grid">
+      <article>
+        <h3>What It Adds</h3>
+        <ul>${page.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      </article>
+      <article>
+        <h3>Workflow</h3>
+        <ol>${page.workflow.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ol>
+      </article>
+      <article>
+        <h3>Connected Workspace</h3>
+        <p>This tool connects into ShipOversea tracking, customer records, support chat, and admin package updates.</p>
+        <div class="button-row">
+          <a class="primary-link" href="${opensTracking ? "#tracking" : "#portal"}">${opensTracking ? "Open Tracking" : "Open Portal"}</a>
+          <a class="secondary-link" href="#tools">All Tools</a>
+        </div>
+      </article>
+    </div>
+  `;
+}
+
 function getActivePage() {
   const hash = window.location.hash || "#home";
   if (hash.startsWith("#feature-")) return "feature";
+  if (hash.startsWith("#tool-")) return "tool";
   if (hash.startsWith("#tracking-") || hash === "#tracking") return "tracking";
   if (hash === "#features") return "features";
+  if (hash === "#tools") return "tools";
   if (hash === "#portal") return "portal";
   if (hash === "#profile") return "profile";
   if (hash === "#backend") return "backend";
@@ -840,14 +953,15 @@ function renderNavigationState() {
     return;
   }
 
-  const isFeaturePage = activePage === "feature";
-  document.body.classList.toggle("feature-mode", isFeaturePage);
+  const isDetailPage = activePage === "feature" || activePage === "tool";
+  document.body.classList.toggle("feature-mode", isDetailPage);
   elements.pageSections.forEach((section) => {
-    section.classList.toggle("route-hidden", isFeaturePage || section.dataset.page !== activePage);
+    section.classList.toggle("route-hidden", isDetailPage || section.dataset.page !== activePage);
   });
+  const navPage = activePage === "feature" ? "features" : activePage === "tool" ? "tools" : activePage;
   elements.navLinks.forEach((link) => {
     const linkPage = getPageFromLink(link.getAttribute("href"));
-    link.classList.toggle("active", linkPage === activePage);
+    link.classList.toggle("active", linkPage === navPage);
   });
 
   if (state.activePage !== activePage) {
@@ -863,6 +977,7 @@ function getPageFromLink(href) {
   if (!href) return "";
   if (href === "#tracking") return "tracking";
   if (href === "#features") return "features";
+  if (href === "#tools") return "tools";
   if (href === "#portal") return "portal";
   if (href === "#backend") return "backend";
   if (href === "#profile") return "profile";
@@ -987,6 +1102,7 @@ function renderAll() {
   renderProfilePage();
   renderSupport();
   renderFeatureDetail();
+  renderToolDetail();
   renderNavigationState();
 }
 
@@ -1502,6 +1618,20 @@ function switchAuthTab(tabName) {
   elements.resetForm.classList.toggle("hidden", tabName !== "reset");
 }
 
+function fillAdminLogin() {
+  switchAuthTab("login");
+  elements.loginForm.elements.email.value = ADMIN_EMAIL;
+  elements.loginForm.elements.password.value = "";
+  setAuthMessage("Admin email ready. Enter the Firebase password for this account.");
+  elements.loginForm.elements.password.focus();
+}
+
+function fillAdminReset() {
+  switchAuthTab("reset");
+  elements.resetForm.elements.email.value = ADMIN_EMAIL;
+  elements.resetMessage.textContent = "Send the reset email, set a new Firebase password, then return to Login.";
+}
+
 function goBack() {
   if (window.history.length > 1) {
     window.history.back();
@@ -1515,6 +1645,7 @@ function handleHashChange() {
     window.history.replaceState({}, "", "#home");
   }
   renderFeatureDetail();
+  renderToolDetail();
   renderNavigationState();
 }
 
@@ -1524,6 +1655,7 @@ function navigateToHash(hash) {
     window.history.pushState({}, "", "#home");
     elements.profileMenu?.classList.add("hidden");
     renderFeatureDetail();
+    renderToolDetail();
     renderNavigationState();
     resetPageScroll();
     return;
@@ -1533,6 +1665,7 @@ function navigateToHash(hash) {
   }
   elements.profileMenu?.classList.add("hidden");
   renderFeatureDetail();
+  renderToolDetail();
   renderNavigationState();
   resetPageScroll();
 }
@@ -1543,6 +1676,8 @@ function bindEvents() {
   elements.registerForm.addEventListener("submit", register);
   elements.resetForm.addEventListener("submit", confirmPasswordReset);
   elements.requestResetButton.addEventListener("click", requestPasswordReset);
+  elements.fillAdminEmailButton?.addEventListener("click", fillAdminLogin);
+  elements.resetAdminPasswordButton?.addEventListener("click", fillAdminReset);
   elements.profileSettingsForm.addEventListener("submit", saveProfileSettings);
   elements.passwordSettingsForm.addEventListener("submit", changeAccountPassword);
   elements.preferenceForm.addEventListener("submit", saveNotificationPreferences);

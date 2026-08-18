@@ -610,6 +610,7 @@ select:focus {
 .map-panel,
 .timeline-panel,
 .feature-panel,
+.tools-panel,
 .auth-panel,
 .customer-panel,
 .profile-page,
@@ -627,6 +628,7 @@ body.dark .detail-panel,
 body.dark .map-panel,
 body.dark .timeline-panel,
 body.dark .feature-panel,
+body.dark .tools-panel,
 body.dark .auth-panel,
 body.dark .customer-panel,
 body.dark .profile-page,
@@ -666,6 +668,7 @@ body.dark .admin-grid article {
 .map-panel,
 .timeline-panel,
 .feature-panel,
+.tools-panel,
 .auth-panel,
 .customer-panel,
 .profile-page,
@@ -896,6 +899,7 @@ body.dark .live-map {
 
 .timeline-panel,
 .feature-panel,
+.tools-panel,
 .portal-grid,
 .profile-page,
 .backend-panel,
@@ -939,13 +943,15 @@ body.dark .live-map {
   font-size: 0.82rem;
 }
 
-.feature-grid {
+.feature-grid,
+.tools-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem;
 }
 
 .feature-grid a,
+.tools-grid a,
 .backend-locked,
 .empty-state,
 .customer-card,
@@ -958,23 +964,27 @@ body.dark .live-map {
   padding: 0.9rem;
 }
 
-.feature-grid a {
+.feature-grid a,
+.tools-grid a {
   display: block;
   transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
-.feature-grid a:hover {
+.feature-grid a:hover,
+.tools-grid a:hover {
   border-color: color-mix(in srgb, var(--blue) 42%, var(--line));
   box-shadow: 0 12px 22px rgba(23, 32, 51, 0.08);
   transform: translateY(-1px);
 }
 
-.feature-grid strong {
+.feature-grid strong,
+.tools-grid strong {
   display: block;
   margin-bottom: 0.45rem;
 }
 
-.feature-grid p {
+.feature-grid p,
+.tools-grid p {
   margin-bottom: 0;
   color: var(--muted);
   line-height: 1.55;
@@ -1079,6 +1089,28 @@ body.dark .live-map {
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.55;
+}
+
+.admin-access-card {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--blue) 24%, var(--line));
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--blue) 8%, var(--surface)), var(--surface));
+  padding: 0.9rem;
+}
+
+.admin-access-card span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.admin-access-card strong {
+  color: var(--ink);
+  font-size: 1rem;
 }
 
 .customer-content {
@@ -1541,24 +1573,64 @@ tbody tr.active {
 }
 
 .footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 2rem 1rem 3rem;
+  display: grid;
+  gap: 1.5rem;
+  width: min(1280px, calc(100% - 2rem));
+  margin: 2rem auto 0;
+  border-top: 1px solid var(--line);
+  padding: 2rem 0 3rem;
   color: var(--muted);
-  text-align: center;
 }
 
-.footer img {
+.footer-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.footer-brand img {
   width: 11rem;
   max-height: 3rem;
   object-fit: contain;
 }
 
-.footer p {
+.footer-brand p {
+  max-width: 38rem;
   margin-bottom: 0;
+  line-height: 1.55;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.footer-grid div {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+}
+
+.footer-grid h3 {
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.footer-grid a {
+  color: var(--muted);
+  font-weight: 760;
+}
+
+.footer-grid a:hover {
+  color: var(--blue);
+}
+
+.footer-bottom {
+  margin: 0;
+  color: color-mix(in srgb, var(--muted) 82%, transparent);
+  font-size: 0.82rem;
 }
 
 .toast {
@@ -1628,6 +1700,8 @@ tbody tr.active {
   }
 
   .feature-grid,
+  .tools-grid,
+  .footer-grid,
   .ops-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1711,7 +1785,9 @@ tbody tr.active {
   .detail-list,
   .timeline,
   .feature-grid,
+  .tools-grid,
   .feature-page-grid,
+  .footer-grid,
   .customer-shipments,
   .profile-grid,
   .profile-workspace,
@@ -1725,7 +1801,8 @@ tbody tr.active {
   }
 
   .route-title,
-  .section-head {
+  .section-head,
+  .footer-brand {
     align-items: flex-start;
     flex-direction: column;
   }
