@@ -1925,7 +1925,6 @@ body {
 }
 
 .tracking-strip,
-.quote-panel,
 .journey-panel {
   margin-top: 1rem;
 }
@@ -1943,37 +1942,6 @@ body {
   border: 0;
   box-shadow: none;
   padding: 0;
-}
-
-.quote-panel {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: 0 10px 28px rgba(16, 24, 39, 0.06);
-  padding: 1.1rem;
-}
-
-.quote-form {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.85rem;
-}
-
-.quote-form label {
-  display: grid;
-  gap: 0.42rem;
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-weight: 900;
-}
-
-.quote-form label:nth-child(5),
-.quote-form .form-note {
-  grid-column: 1 / -1;
-}
-
-.quote-form button {
-  align-self: end;
 }
 
 textarea {
@@ -2041,14 +2009,13 @@ textarea:focus {
 
 .auth-panel input::placeholder,
 .ops-form input::placeholder,
-.quote-form input::placeholder,
-.quote-form textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: color-mix(in srgb, var(--muted) 70%, transparent);
 }
 
 @media (max-width: 1000px) {
   .hero-band,
-  .quote-form,
   .journey-panel {
     grid-template-columns: 1fr;
   }
@@ -2058,10 +2025,6 @@ textarea:focus {
     min-height: 28rem;
   }
 
-  .quote-form label:nth-child(5),
-  .quote-form .form-note {
-    grid-column: auto;
-  }
 }
 
 @media (max-width: 720px) {

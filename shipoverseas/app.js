@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-production-login";
+import { firebaseClient } from "./firebase-client.js?v=20260818-no-quote";
 
 const TOKEN_KEY = "shipoverseas.token";
 const THEME_KEY = "shipoverseas.theme";
@@ -122,8 +122,6 @@ const elements = {
   heroTrackingForm: document.querySelector("#heroTrackingForm"),
   heroTrackingInput: document.querySelector("#heroTrackingInput"),
   trackingMessage: document.querySelector("#trackingMessage"),
-  quoteForm: document.querySelector("#quoteForm"),
-  quoteMessage: document.querySelector("#quoteMessage"),
   quickList: document.querySelector("#quickList"),
   metricActive: document.querySelector("#metricActive"),
   metricDelayed: document.querySelector("#metricDelayed"),
@@ -1081,50 +1079,6 @@ async function login(event) {
   }
 }
 
-async function submitQuoteRequest(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const data = new FormData(form);
-  const message = [
-    "Shipping quote request",
-    `Name: ${data.get("name")}`,
-    `Email: ${data.get("email")}`,
-    `Origin: ${data.get("origin")}`,
-    `Destination: ${data.get("destination")}`,
-    `Cargo: ${data.get("cargo")}`
-  ].join("\n");
-  elements.quoteMessage.textContent = "";
-  if (!state.user) {
-    elements.quoteMessage.textContent = "Create an account or log in first, then submit the quote request so support can reply to your profile.";
-    navigateToHash("#portal");
-    toast("Log in to submit a quote request.");
-    return;
-  }
-  if (isAdmin()) {
-    elements.quoteMessage.textContent = "Quote requests are for customer accounts.";
-    toast("Use a customer account to submit a quote.");
-    return;
-  }
-  try {
-    const response = useFirebase()
-      ? await firebaseClient.createOrSendCustomerMessage({ subject: "Shipping quote request", message })
-      : await apiFetch("/api/support/conversations", {
-          method: "POST",
-          body: { subject: "Shipping quote request", message }
-        });
-    state.selectedSupportConversationId = response.conversation.id;
-    state.supportMessages = response.messages;
-    form.reset();
-    await loadPrivateData();
-    elements.quoteMessage.textContent = "Quote request sent. Support will reply in your customer portal.";
-    renderAll();
-    toast("Quote request sent.");
-  } catch (error) {
-    elements.quoteMessage.textContent = error.message;
-    toast(error.message);
-  }
-}
-
 async function register(event) {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
@@ -1574,7 +1528,6 @@ function navigateToHash(hash) {
 
 function bindEvents() {
   elements.heroTrackingForm.addEventListener("submit", handleTrackingSubmit);
-  elements.quoteForm?.addEventListener("submit", submitQuoteRequest);
   elements.loginForm.addEventListener("submit", login);
   elements.registerForm.addEventListener("submit", register);
   elements.resetForm.addEventListener("submit", confirmPasswordReset);

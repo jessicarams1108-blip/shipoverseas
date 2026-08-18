@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20260818-production-login" />
+    <link rel="stylesheet" href="./styles.css?v=20260818-no-quote" />
   </head>
   <body>
     <header class="topbar">
@@ -53,12 +53,6 @@
             Reliable international cargo shipping support with transparent tracking from pickup to final delivery.
           </p>
           <div class="hero-actions">
-            <a class="primary-link" href="#quote">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 5h16M4 12h16M4 19h10" />
-              </svg>
-              Get a Shipping Quote
-            </a>
             <a class="primary-link" href="#tracking">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="m21 21-4.35-4.35" />
@@ -108,45 +102,11 @@
         </form>
       </section>
 
-      <section id="quote" class="quote-panel dashboard-surface" data-page="home" aria-label="Request a shipping quote">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Request a Quote</p>
-            <h2>Tell us what you need to ship</h2>
-          </div>
-          <span class="status-pill">No instant pricing</span>
-        </div>
-        <form class="quote-form" id="quoteForm">
-          <label>
-            Your name
-            <input name="name" autocomplete="name" required placeholder="Full name or company" />
-          </label>
-          <label>
-            Email
-            <input name="email" type="email" autocomplete="email" required placeholder="you@example.com" />
-          </label>
-          <label>
-            Origin
-            <input name="origin" required placeholder="City, country" />
-          </label>
-          <label>
-            Destination
-            <input name="destination" required placeholder="City, country" />
-          </label>
-          <label>
-            Cargo details
-            <textarea name="cargo" required placeholder="Package type, weight, dimensions, quantity"></textarea>
-          </label>
-          <button class="primary-button" type="submit">Submit Quote Request</button>
-          <p class="form-note" id="quoteMessage" role="status"></p>
-        </form>
-      </section>
-
       <section class="journey-panel dashboard-surface" data-page="home" aria-label="Customer shipping journey">
         <article>
           <span>01</span>
-          <strong>Request a quote</strong>
-          <p>Share the origin, destination, cargo details, and preferred service level.</p>
+          <strong>Create an account</strong>
+          <p>Customers sign in to view shipment records, support replies, and email update history.</p>
         </article>
         <article>
           <span>02</span>
@@ -692,6 +652,6 @@
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20260818-production-login"></script>
+    <script type="module" src="./app.js?v=20260818-no-quote"></script>
   </body>
 </html>
