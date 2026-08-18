@@ -192,7 +192,11 @@ function normalizeFirebaseError(error) {
   const code = error?.code || "";
   if (code.includes("permission-denied")) return new Error("Firebase permission denied. Check your Firestore rules and admin email.");
   if (code.includes("invalid-credential") || code.includes("user-not-found") || code.includes("wrong-password")) {
-    return new Error("Invalid email or password.");
+    return new Error("Invalid email or password. Use Reset Password to set a new Firebase password for this account.");
+  }
+  if (code.includes("operation-not-allowed")) return new Error("Firebase Email/Password sign-in is not enabled yet.");
+  if (code.includes("unauthorized-domain")) {
+    return new Error("This domain is not authorized in Firebase Auth. Add shipoversea.site and www.shipoversea.site in Authentication settings.");
   }
   if (code.includes("email-already-in-use")) return new Error("An account already exists for that email.");
   if (code.includes("weak-password")) return new Error("Password should be at least 6 characters.");
@@ -311,7 +315,10 @@ async function register({ name, email, password }) {
 async function requestPasswordReset(email) {
   await requireReady();
   try {
-    await authMod.sendPasswordResetEmail(auth, normalizeEmail(email));
+    await authMod.sendPasswordResetEmail(auth, normalizeEmail(email), {
+      url: `${window.location.origin}/#portal`,
+      handleCodeInApp: false
+    });
     return { message: "Firebase sent a password reset email. Open that email to choose a new password." };
   } catch (error) {
     throw normalizeFirebaseError(error);

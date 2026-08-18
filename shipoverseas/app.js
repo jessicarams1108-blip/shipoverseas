@@ -150,6 +150,7 @@ const elements = {
   registerForm: document.querySelector("#registerForm"),
   resetForm: document.querySelector("#resetForm"),
   requestResetButton: document.querySelector("#requestResetButton"),
+  authMessage: document.querySelector("#authMessage"),
   resetMessage: document.querySelector("#resetMessage"),
   localResetOnly: document.querySelectorAll("[data-local-reset-only]"),
   demoLogins: document.querySelectorAll(".demo-logins"),
@@ -290,6 +291,12 @@ function toast(message) {
   elements.toast.classList.add("show");
   window.clearTimeout(toast.timer);
   toast.timer = window.setTimeout(() => elements.toast.classList.remove("show"), 2600);
+}
+
+function setAuthMessage(message) {
+  if (elements.authMessage) {
+    elements.authMessage.textContent = message || "";
+  }
 }
 
 function routePoint(portName, fallback) {
@@ -1006,9 +1013,11 @@ async function handleTrackingSubmit(event) {
 async function login(event) {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
+  const email = String(data.get("email") || "").trim();
+  setAuthMessage("");
   try {
     if (useFirebase()) {
-      state.user = await firebaseClient.login(data.get("email"), data.get("password"));
+      state.user = await firebaseClient.login(email, data.get("password"));
       state.token = "firebase";
       localStorage.removeItem(TOKEN_KEY);
       await loadBootstrap();
@@ -1031,6 +1040,12 @@ async function login(event) {
     renderAll();
     toast(`Logged in as ${state.user.email}`);
   } catch (error) {
+    setAuthMessage(error.message);
+    if (useFirebase() && /password|credential|authorized|sign-in/i.test(error.message)) {
+      elements.resetForm.elements.email.value = email;
+      elements.resetMessage.textContent = "Use Reset Password to send a Firebase reset email, then log in with the new password.";
+      switchAuthTab("reset");
+    }
     toast(error.message);
   }
 }
@@ -1038,6 +1053,7 @@ async function login(event) {
 async function register(event) {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
+  setAuthMessage("");
   try {
     if (useFirebase()) {
       state.user = await firebaseClient.register({
@@ -1068,12 +1084,14 @@ async function register(event) {
     renderAll();
     toast("Account created.");
   } catch (error) {
+    setAuthMessage(error.message);
     toast(error.message);
   }
 }
 
 async function requestPasswordReset() {
   const email = elements.resetForm.elements.email.value.trim();
+  setAuthMessage("");
   if (!email) {
     toast("Enter your account email first.");
     return;
@@ -1082,6 +1100,7 @@ async function requestPasswordReset() {
     if (useFirebase()) {
       const response = await firebaseClient.requestPasswordReset(email);
       elements.resetMessage.textContent = response.message;
+      setAuthMessage("Password reset email sent. Check inbox and spam, then return here to log in.");
       toast("Reset email sent.");
       return;
     }

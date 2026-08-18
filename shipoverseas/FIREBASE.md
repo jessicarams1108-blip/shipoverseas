@@ -20,11 +20,25 @@ Hardewusi@gmail.com
 
 Only this email can create, update, advance, notify, export, and audit packages.
 
-In **Authentication > Settings > Authorized domains**, add your live domain when deployed. For local testing, add `127.0.0.1` if Firebase blocks local sign-in.
+In **Authentication > Settings > Authorized domains**, add:
+
+```txt
+shipoversea.site
+www.shipoversea.site
+127.0.0.1
+```
+
+For local phone testing, add the laptop LAN IP shown by `ipconfig`.
 
 ## Firestore Rules
 
-Paste these rules in **Firestore Database > Rules** and click **Publish**.
+These rules are stored in the repo at `firestore.rules` and can be deployed with:
+
+```powershell
+npx firebase-tools deploy --only firestore:rules
+```
+
+You can also paste the same rules in **Firestore Database > Rules** and click **Publish**.
 
 ```js
 rules_version = '2';

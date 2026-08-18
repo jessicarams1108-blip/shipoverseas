@@ -10,5 +10,6 @@ yarn-error.log*
 pnpm-debug.log*
 .vercel
 .firebase/
+.firebase-auth-check.json
 shipoverseas/data/db.json
 shipoverseas/data/backups/
