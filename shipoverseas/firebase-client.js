@@ -264,7 +264,9 @@ async function login(email, password) {
   await requireReady();
   try {
     const result = await authMod.signInWithEmailAndPassword(auth, normalizeEmail(email), String(password || ""));
-    return ensureUserProfile(result.user);
+    const profile = makeFallbackProfile(result.user);
+    void ensureUserProfile(result.user);
+    return profile;
   } catch (error) {
     throw normalizeFirebaseError(error);
   }

@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-port-bg";
+import { firebaseClient } from "./firebase-client.js?v=20260818-login-polish";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -382,6 +382,20 @@ function setAuthMessage(message) {
   if (elements.authMessage) {
     elements.authMessage.textContent = message || "";
   }
+}
+
+function setFormBusy(form, busy, busyLabel = "Working...") {
+  const button = form?.querySelector('button[type="submit"]');
+  if (!button) return;
+  if (!button.dataset.readyLabel) {
+    button.dataset.readyLabel = button.textContent.trim();
+  }
+  Array.from(form.elements || []).forEach((control) => {
+    control.disabled = busy;
+  });
+  button.classList.toggle("is-loading", busy);
+  button.setAttribute("aria-busy", String(busy));
+  button.textContent = busy ? busyLabel : button.dataset.readyLabel;
 }
 
 function routePoint(portName, fallback) {
@@ -1099,6 +1113,19 @@ function syncUpdateForm() {
   elements.updateForm.elements.risk.value = shipment.risk || "";
 }
 
+function syncSelectedShipment() {
+  if (state.selectedShipment) {
+    const fresh =
+      state.shipments.find((shipment) => shipment.trackingId === state.selectedShipment.trackingId) ||
+      state.myShipments.find((shipment) => shipment.trackingId === state.selectedShipment.trackingId);
+    if (fresh) {
+      state.selectedShipment = fresh;
+      return;
+    }
+  }
+  state.selectedShipment = visibleShipments()[0] || state.shipments[0] || null;
+}
+
 function renderAll() {
   renderAuthSummary();
   renderMetrics();
@@ -1128,12 +1155,7 @@ async function refreshAll() {
   await loadMe();
   await loadBootstrap();
   await loadPrivateData();
-  if (state.selectedShipment) {
-    const fresh =
-      state.shipments.find((shipment) => shipment.trackingId === state.selectedShipment.trackingId) ||
-      state.myShipments.find((shipment) => shipment.trackingId === state.selectedShipment.trackingId);
-    if (fresh) state.selectedShipment = fresh;
-  }
+  syncSelectedShipment();
   renderAll();
 }
 
@@ -1167,21 +1189,31 @@ async function handleTrackingSubmit(event) {
 
 async function login(event) {
   event.preventDefault();
-  const data = new FormData(event.currentTarget);
+  const form = event.currentTarget;
+  const data = new FormData(form);
   const email = String(data.get("email") || "").trim();
-  setAuthMessage("");
+  setAuthMessage(useFirebase() ? "Checking your Firebase account..." : "Checking your account...");
+  setFormBusy(form, true, "Signing in...");
   try {
     requireAvailableBackend();
     if (useFirebase()) {
       state.user = await firebaseClient.login(email, data.get("password"));
       state.token = "firebase";
       localStorage.removeItem(TOKEN_KEY);
-      await loadBootstrap();
-      await loadPrivateData();
+      renderAll();
+      setFormBusy(form, false);
+      setAuthMessage("Signed in. Loading your shipments, support messages, and email updates...");
+      toast(`Signed in as ${state.user.email}`);
+      try {
+        await Promise.all([loadBootstrap(), loadPrivateData()]);
+        syncSelectedShipment();
+      } catch (dataError) {
+        state.dataWarning = dataError.message;
+      }
       renderAll();
       const loginWarning = state.user.profileWarning || state.dataWarning;
-      setAuthMessage(loginWarning ? `Logged in as ${state.user.email}. ${loginWarning}` : "");
-      toast(loginWarning ? "Logged in. Firestore data needs attention." : `Logged in with Firebase as ${state.user.email}`);
+      setAuthMessage(loginWarning ? `Logged in as ${state.user.email}. ${loginWarning}` : "Your account is ready.");
+      toast(loginWarning ? "Logged in. Account data needs attention." : "Account ready.");
       return;
     }
     const response = await apiFetch("/api/login", {
@@ -1195,7 +1227,9 @@ async function login(event) {
     state.user = response.user;
     localStorage.setItem(TOKEN_KEY, state.token);
     await loadPrivateData();
+    syncSelectedShipment();
     renderAll();
+    setAuthMessage("Your account is ready.");
     toast(`Logged in as ${state.user.email}`);
   } catch (error) {
     setAuthMessage(error.message);
@@ -1205,13 +1239,17 @@ async function login(event) {
       switchAuthTab("reset");
     }
     toast(error.message);
+  } finally {
+    setFormBusy(form, false);
   }
 }
 
 async function register(event) {
   event.preventDefault();
-  const data = new FormData(event.currentTarget);
-  setAuthMessage("");
+  const form = event.currentTarget;
+  const data = new FormData(form);
+  setAuthMessage("Creating your secure portal account...");
+  setFormBusy(form, true, "Creating...");
   try {
     requireAvailableBackend();
     if (useFirebase()) {
@@ -1222,11 +1260,18 @@ async function register(event) {
       });
       state.token = "firebase";
       localStorage.removeItem(TOKEN_KEY);
-      await loadBootstrap();
-      await loadPrivateData();
+      renderAll();
+      setFormBusy(form, false);
+      setAuthMessage("Account created. Loading your customer portal...");
+      try {
+        await Promise.all([loadBootstrap(), loadPrivateData()]);
+        syncSelectedShipment();
+      } catch (dataError) {
+        state.dataWarning = dataError.message;
+      }
       renderAll();
       const registerWarning = state.user.profileWarning || state.dataWarning;
-      setAuthMessage(registerWarning ? `Account created. ${registerWarning}` : "");
+      setAuthMessage(registerWarning ? `Account created. ${registerWarning}` : "Account created. Your portal is ready.");
       toast(registerWarning ? "Account created. Firestore data needs attention." : "Firebase account created.");
       return;
     }
@@ -1242,11 +1287,15 @@ async function register(event) {
     state.user = response.user;
     localStorage.setItem(TOKEN_KEY, state.token);
     await loadPrivateData();
+    syncSelectedShipment();
     renderAll();
+    setAuthMessage("Account created. Your portal is ready.");
     toast("Account created.");
   } catch (error) {
     setAuthMessage(error.message);
     toast(error.message);
+  } finally {
+    setFormBusy(form, false);
   }
 }
 
@@ -1286,12 +1335,17 @@ async function requestPasswordReset() {
 
 async function confirmPasswordReset(event) {
   event.preventDefault();
-  if (useFirebase()) {
-    await requestPasswordReset();
-    return;
-  }
   const form = event.currentTarget;
   const data = new FormData(form);
+  setFormBusy(form, true, useFirebase() ? "Sending..." : "Updating...");
+  if (useFirebase()) {
+    try {
+      await requestPasswordReset();
+    } finally {
+      setFormBusy(form, false);
+    }
+    return;
+  }
   try {
     await apiFetch("/api/password-reset/confirm", {
       method: "POST",
@@ -1309,6 +1363,8 @@ async function confirmPasswordReset(event) {
     toast("Password updated. Log in with the new password.");
   } catch (error) {
     elements.resetMessage.textContent = error.message;
+  } finally {
+    setFormBusy(form, false);
   }
 }
 
