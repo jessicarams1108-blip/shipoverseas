@@ -306,7 +306,7 @@ function publicUser(user) {
 }
 
 function enrichShipment(shipment) {
-  return { ...shipment, progress: getProgress(shipment.status) };
+  return normalizeShipment(shipment);
 }
 
 function publicShipment(shipment) {
@@ -339,9 +339,17 @@ function getProgress(status) {
   return statusSteps.find((step) => step.name === status)?.progress || 0;
 }
 
+function numberOrBlank(value) {
+  if (value === "" || value === null || value === undefined) return "";
+  const number = Number(value);
+  return Number.isFinite(number) ? number : "";
+}
+
 function normalizeShipment(input) {
   const status = String(input.status || "Booking Confirmed");
   const trackingId = String(input.trackingId || "").trim().toUpperCase();
+  const currentLocationName = String(input.currentLocationName || input.locationName || input.origin || "").trim();
+  const explicitProgress = numberOrBlank(input.progress);
   return {
     trackingId,
     container: String(input.container || "").trim().toUpperCase(),
@@ -350,16 +358,31 @@ function normalizeShipment(input) {
     receiverEmail: String(input.receiverEmail || "").trim().toLowerCase(),
     vessel: String(input.vessel || "").trim(),
     cargo: String(input.cargo || "").trim(),
+    cargoType: String(input.cargoType || "").trim(),
+    cargoCondition: String(input.cargoCondition || "").trim(),
+    cargoQuantity: numberOrBlank(input.cargoQuantity) || 1,
+    cargoLengthIn: numberOrBlank(input.cargoLengthIn),
+    cargoWidthIn: numberOrBlank(input.cargoWidthIn),
+    cargoHeightIn: numberOrBlank(input.cargoHeightIn),
+    cargoVolumeCuFt: numberOrBlank(input.cargoVolumeCuFt),
+    cargoWeightLbs: numberOrBlank(input.cargoWeightLbs),
+    cargoReference: String(input.cargoReference || "").trim(),
+    cargoManifest: String(input.cargoManifest || "").trim(),
+    cargoNotes: String(input.cargoNotes || "").trim(),
     origin: String(input.origin || "").trim(),
     destination: String(input.destination || "").trim(),
     status,
     eta: String(input.eta || "").trim(),
-    locationName: String(input.locationName || "").trim(),
+    locationName: currentLocationName,
+    currentLocationName,
+    currentLatitude: numberOrBlank(input.currentLatitude),
+    currentLongitude: numberOrBlank(input.currentLongitude),
+    currentLocationUpdatedAt: input.currentLocationUpdatedAt || input.lastUpdated || new Date().toISOString(),
     manager: String(input.manager || "Ops desk").trim(),
     risk: String(input.risk || "On track").trim(),
-    lastUpdated: new Date().toISOString(),
+    lastUpdated: input.lastUpdated || new Date().toISOString(),
     createdAt: input.createdAt || new Date().toISOString(),
-    progress: getProgress(status)
+    progress: explicitProgress === "" ? getProgress(status) : Math.max(0, Math.min(100, explicitProgress))
   };
 }
 
@@ -392,7 +415,7 @@ async function createEmail(db, shipment, reason, preferenceKey = "statusUpdates"
     id: crypto.randomUUID(),
     to: shipment.receiverEmail,
     subject: `ShipOverseas update for ${shipment.trackingId}`,
-    body: `Hello ${shipment.receiverName || "customer"}, your shipment ${shipment.trackingId} is now ${shipment.status}. ETA: ${shipment.eta}. ${reason}`,
+    body: `Hello ${shipment.receiverName || "customer"}, your shipment ${shipment.trackingId} is now ${shipment.status}. Current location: ${shipment.currentLocationName || shipment.locationName || "updating"}. ETA: ${shipment.eta}. ${reason}`,
     status: RESEND_API_KEY ? "queued" : "simulated",
     provider: RESEND_API_KEY ? "resend" : "local",
     preferenceKey,
@@ -798,14 +821,49 @@ async function handleApi(request, response, parsed) {
         return;
       }
       const body = await parseBody(request);
-      const allowed = ["status", "eta", "locationName", "risk", "receiverEmail", "receiverName", "vessel", "cargo", "origin", "destination"];
+      const allowed = [
+        "status",
+        "eta",
+        "locationName",
+        "currentLocationName",
+        "currentLatitude",
+        "currentLongitude",
+        "progress",
+        "risk",
+        "receiverEmail",
+        "receiverName",
+        "vessel",
+        "cargo",
+        "cargoType",
+        "cargoCondition",
+        "cargoQuantity",
+        "cargoLengthIn",
+        "cargoWidthIn",
+        "cargoHeightIn",
+        "cargoVolumeCuFt",
+        "cargoWeightLbs",
+        "cargoReference",
+        "cargoManifest",
+        "cargoNotes",
+        "origin",
+        "destination"
+      ];
       for (const key of allowed) {
         if (body[key] !== undefined) {
-          shipment[key] = key === "receiverEmail" ? String(body[key]).trim().toLowerCase() : String(body[key]).trim();
+          if (key === "receiverEmail") {
+            shipment[key] = String(body[key]).trim().toLowerCase();
+          } else if (["currentLatitude", "currentLongitude", "progress", "cargoQuantity", "cargoLengthIn", "cargoWidthIn", "cargoHeightIn", "cargoVolumeCuFt", "cargoWeightLbs"].includes(key)) {
+            shipment[key] = numberOrBlank(body[key]);
+          } else {
+            shipment[key] = String(body[key]).trim();
+          }
         }
       }
+      if (shipment.currentLocationName) shipment.locationName = shipment.currentLocationName;
+      if (!shipment.currentLocationName && shipment.locationName) shipment.currentLocationName = shipment.locationName;
+      shipment.currentLocationUpdatedAt = new Date().toISOString();
       shipment.lastUpdated = new Date().toISOString();
-      shipment.progress = getProgress(shipment.status);
+      shipment.progress = shipment.progress === "" ? getProgress(shipment.status) : Math.max(0, Math.min(100, Number(shipment.progress)));
       const preferenceKey = String(shipment.risk || "").toLowerCase().includes("watch") ? "riskAlerts" : "statusUpdates";
       const email = await createEmail(db, shipment, "This update was sent by ShipOverseas operations.", preferenceKey);
       audit(db, admin, "shipment.updated", { trackingId: shipment.trackingId, changedFields: Object.keys(body) });
@@ -825,6 +883,8 @@ async function handleApi(request, response, parsed) {
       const index = Math.max(0, statusSteps.findIndex((step) => step.name === shipment.status));
       shipment.status = statusSteps[Math.min(index + 1, statusSteps.length - 1)].name;
       shipment.progress = getProgress(shipment.status);
+      shipment.currentLocationName ||= shipment.locationName;
+      shipment.currentLocationUpdatedAt = new Date().toISOString();
       shipment.lastUpdated = new Date().toISOString();
       const email = await createEmail(db, shipment, "The shipment was advanced to the next milestone.", "statusUpdates");
       audit(db, admin, "shipment.advanced", { trackingId: shipment.trackingId, status: shipment.status });

@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-login-polish";
+import { firebaseClient } from "./firebase-client.js?v=20260818-cargo-details";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -439,10 +439,61 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function numberOrNull(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function shipmentProgress(shipment) {
+  const explicit = numberOrNull(shipment?.progress);
+  return explicit === null ? getProgress(shipment?.status) : clamp(explicit, 0, 100);
+}
+
+function formatNumber(value, suffix = "") {
+  const number = numberOrNull(value);
+  if (number === null) return "-";
+  return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(number)}${suffix}`;
+}
+
+function formatDimensions(shipment) {
+  const length = numberOrNull(shipment?.cargoLengthIn);
+  const width = numberOrNull(shipment?.cargoWidthIn);
+  const height = numberOrNull(shipment?.cargoHeightIn);
+  if (length === null && width === null && height === null) return "-";
+  return `L: ${formatNumber(length, '"')} W: ${formatNumber(width, '"')} H: ${formatNumber(height, '"')}`;
+}
+
+function formatCoordinates(shipment) {
+  const lat = numberOrNull(shipment?.currentLatitude);
+  const lon = numberOrNull(shipment?.currentLongitude);
+  if (lat === null || lon === null) return "-";
+  return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+}
+
+function currentLocationName(shipment) {
+  return shipment?.currentLocationName || shipment?.locationName || shipment?.origin || shipment?.status || "Location updating";
+}
+
+function currentGeoForShipment(shipment, progress) {
+  const lat = numberOrNull(shipment?.currentLatitude);
+  const lon = numberOrNull(shipment?.currentLongitude);
+  if (lat !== null && lon !== null) {
+    return { lat, lon };
+  }
+  const origin = routeGeo(shipment.origin, { lat: 20, lon: -20 });
+  const destination = routeGeo(shipment.destination, { lat: 34, lon: 20 });
+  return currentGeoPoint(origin, destination, progress);
+}
+
+function multilineHtml(value) {
+  return escapeHtml(value || "").replace(/\n/g, "<br>");
+}
+
 function makeMapEmbedUrl(shipment, progress) {
   const origin = routeGeo(shipment.origin, { lat: 20, lon: -20 });
   const destination = routeGeo(shipment.destination, { lat: 34, lon: 20 });
-  const current = currentGeoPoint(origin, destination, progress);
+  const current = currentGeoForShipment(shipment, progress);
   const minLon = clamp(Math.min(origin.lon, destination.lon, current.lon) - 8, -179, 179);
   const maxLon = clamp(Math.max(origin.lon, destination.lon, current.lon) + 8, -179, 179);
   const minLat = clamp(Math.min(origin.lat, destination.lat, current.lat) - 6, -80, 84);
@@ -668,7 +719,7 @@ function renderDetails() {
     elements.detailList.innerHTML = `<div><dt>Status</dt><dd>No shipment loaded</dd></div>`;
     return;
   }
-  const progress = shipment.progress ?? getProgress(shipment.status);
+  const progress = shipmentProgress(shipment);
   const risk = getRisk(shipment);
   elements.detailTrackingId.textContent = shipment.trackingId;
   elements.detailStatus.textContent = shipment.status;
@@ -683,19 +734,34 @@ function renderDetails() {
   elements.heroTrackingInput.value = shipment.trackingId;
 
   const rows = [
+    ["Current Location", currentLocationName(shipment), "detail-current"],
+    ["Coordinates", formatCoordinates(shipment)],
+    ["Location Updated", formatDateTime(shipment.currentLocationUpdatedAt || shipment.lastUpdated)],
     ["Bill of Lading", shipment.billOfLading],
     ["Container", shipment.container],
     ["Receiver", shipment.receiverName],
     ["Vessel", shipment.vessel],
     ["Cargo", shipment.cargo],
-    ["Location", shipment.locationName],
+    ["Cargo Type", shipment.cargoType],
+    ["Condition", shipment.cargoCondition],
+    ["Quantity", shipment.cargoQuantity],
+    ["Dimensions", formatDimensions(shipment)],
+    ["Volume", formatNumber(shipment.cargoVolumeCuFt, " cu. ft.")],
+    ["Weight", formatNumber(shipment.cargoWeightLbs, " lbs")],
+    ["Reference / VIN", shipment.cargoReference],
     ["Manager", shipment.manager || "Ops desk"]
   ];
   if (state.user && (isAdmin() || shipment.receiverEmail === state.user.email?.toLowerCase())) {
-    rows.splice(3, 0, ["Receiver Email", shipment.receiverEmail]);
+    rows.splice(6, 0, ["Receiver Email", shipment.receiverEmail]);
+  }
+  if (shipment.cargoManifest) {
+    rows.push(["Cargo Manifest", shipment.cargoManifest, "detail-wide detail-manifest"]);
+  }
+  if (shipment.cargoNotes) {
+    rows.push(["Cargo Notes", shipment.cargoNotes, "detail-wide detail-manifest"]);
   }
   elements.detailList.innerHTML = rows
-    .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value || "-")}</dd></div>`)
+    .map(([label, value, className]) => `<div class="${escapeHtml(className || "")}"><dt>${escapeHtml(label)}</dt><dd>${className?.includes("detail-manifest") ? multilineHtml(value || "-") : escapeHtml(value || "-")}</dd></div>`)
     .join("");
 }
 
@@ -710,13 +776,14 @@ function renderMap() {
   }
   const origin = routePoint(shipment.origin, { x: 150, y: 170 });
   const destination = routePoint(shipment.destination, { x: 530, y: 175 });
-  const progress = shipment.progress ?? getProgress(shipment.status);
+  const progress = shipmentProgress(shipment);
   const ship = currentShipPoint(origin, destination, progress);
   const mapUrl = makeMapEmbedUrl(shipment, progress);
   if (elements.liveMapFrame.src !== mapUrl) {
     elements.liveMapFrame.src = mapUrl;
   }
-  elements.liveMapStatus.textContent = `${shipment.locationName || shipment.status} - ${formatDateTime(shipment.lastUpdated)}`;
+  const coordinates = formatCoordinates(shipment);
+  elements.liveMapStatus.textContent = `${currentLocationName(shipment)}${coordinates === "-" ? "" : ` - ${coordinates}`} - ${formatDateTime(shipment.currentLocationUpdatedAt || shipment.lastUpdated)}`;
   elements.routeLine.setAttribute("d", makeRoutePath(origin, destination));
   elements.originDot.setAttribute("cx", origin.x);
   elements.originDot.setAttribute("cy", origin.y);
@@ -760,13 +827,13 @@ function renderFleet() {
   );
   elements.fleetRows.innerHTML = visible
     .map((shipment) => {
-      const progress = shipment.progress ?? getProgress(shipment.status);
+      const progress = shipmentProgress(shipment);
       const active = shipment.trackingId === state.selectedShipment?.trackingId ? "active" : "";
       return `
         <tr class="${active}" data-tracking="${escapeHtml(shipment.trackingId)}">
           <td data-label="Tracking"><strong>${escapeHtml(shipment.trackingId)}</strong><br><small>${escapeHtml(shipment.billOfLading)}</small></td>
           <td data-label="Receiver">${escapeHtml(shipment.receiverName || "Customer shipment")}${isAdmin() && shipment.receiverEmail ? `<br><small>${escapeHtml(shipment.receiverEmail)}</small>` : ""}</td>
-          <td data-label="Route">${escapeHtml(shipment.origin)} to ${escapeHtml(shipment.destination)}</td>
+          <td data-label="Route">${escapeHtml(shipment.origin)} to ${escapeHtml(shipment.destination)}<br><small>${escapeHtml(currentLocationName(shipment))}</small></td>
           <td data-label="Status">${escapeHtml(shipment.status)}</td>
           <td data-label="ETA">${formatDate(shipment.eta)}</td>
           <td data-label="Progress"><div class="mini-progress"><span><i style="width:${progress}%"></i></span><b>${progress}%</b></div></td>
@@ -799,8 +866,10 @@ function renderCustomerPortal() {
             (shipment) => `
               <div class="customer-card" data-tracking="${escapeHtml(shipment.trackingId)}">
                 <strong>${escapeHtml(shipment.trackingId)}</strong>
+                <span>${escapeHtml(shipment.cargo || "Cargo shipment")}</span>
                 <p>${escapeHtml(shipment.origin)} to ${escapeHtml(shipment.destination)}</p>
-                <p>${escapeHtml(shipment.status)} - ETA ${formatDate(shipment.eta)}</p>
+                <p>${escapeHtml(shipment.status)} - ${escapeHtml(currentLocationName(shipment))}</p>
+                <p>ETA ${formatDate(shipment.eta)} - ${formatNumber(shipment.cargoWeightLbs, " lbs")}</p>
               </div>`
           )
           .join("");
@@ -1109,7 +1178,10 @@ function syncUpdateForm() {
   elements.adminShipmentSelect.value = shipment.trackingId;
   elements.updateStatusSelect.value = shipment.status;
   elements.updateForm.elements.eta.value = shipment.eta || "";
-  elements.updateForm.elements.locationName.value = shipment.locationName || "";
+  elements.updateForm.elements.currentLocationName.value = currentLocationName(shipment);
+  elements.updateForm.elements.currentLatitude.value = shipment.currentLatitude || "";
+  elements.updateForm.elements.currentLongitude.value = shipment.currentLongitude || "";
+  elements.updateForm.elements.progress.value = shipmentProgress(shipment);
   elements.updateForm.elements.risk.value = shipment.risk || "";
 }
 
@@ -1544,7 +1616,11 @@ async function updateShipment(event) {
   const body = {
     status: data.status,
     eta: data.eta,
-    locationName: data.locationName,
+    currentLocationName: data.currentLocationName,
+    locationName: data.currentLocationName,
+    currentLatitude: data.currentLatitude,
+    currentLongitude: data.currentLongitude,
+    progress: data.progress,
     risk: data.risk
   };
   try {

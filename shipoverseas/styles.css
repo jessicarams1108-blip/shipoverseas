@@ -2298,6 +2298,30 @@ input:disabled {
   }
 }
 
+.ops-span-4,
+.detail-list .detail-wide {
+  grid-column: 1 / -1;
+}
+
+.detail-list .detail-current {
+  border-color: color-mix(in srgb, var(--green) 34%, var(--line));
+  background: color-mix(in srgb, var(--green) 7%, var(--surface));
+}
+
+.detail-manifest dd {
+  white-space: normal;
+  line-height: 1.55;
+}
+
+.customer-card span {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
 @media (max-width: 1000px) {
   .hero-band,
   .journey-panel {

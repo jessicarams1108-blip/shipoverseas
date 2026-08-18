@@ -60,6 +60,12 @@ function getProgress(status) {
   return statusSteps.find((step) => step.name === status)?.progress || 0;
 }
 
+function numberOrBlank(value) {
+  if (value === "" || value === null || value === undefined) return "";
+  const number = Number(value);
+  return Number.isFinite(number) ? number : "";
+}
+
 function normalizePreferences(preferences = {}) {
   const normalized = { ...defaultPreferences };
   Object.keys(defaultPreferences).forEach((key) => {
@@ -89,6 +95,8 @@ function normalizeDateFields(item) {
 function normalizeShipment(input = {}) {
   const status = String(input.status || "Booking Confirmed").trim();
   const trackingId = String(input.trackingId || "").trim().toUpperCase();
+  const currentLocationName = String(input.currentLocationName || input.locationName || input.origin || "").trim();
+  const explicitProgress = numberOrBlank(input.progress);
   return {
     trackingId,
     container: String(input.container || "").trim().toUpperCase(),
@@ -97,14 +105,29 @@ function normalizeShipment(input = {}) {
     receiverEmail: normalizeEmail(input.receiverEmail),
     vessel: String(input.vessel || "").trim(),
     cargo: String(input.cargo || "").trim(),
+    cargoType: String(input.cargoType || "").trim(),
+    cargoCondition: String(input.cargoCondition || "").trim(),
+    cargoQuantity: numberOrBlank(input.cargoQuantity) || 1,
+    cargoLengthIn: numberOrBlank(input.cargoLengthIn),
+    cargoWidthIn: numberOrBlank(input.cargoWidthIn),
+    cargoHeightIn: numberOrBlank(input.cargoHeightIn),
+    cargoVolumeCuFt: numberOrBlank(input.cargoVolumeCuFt),
+    cargoWeightLbs: numberOrBlank(input.cargoWeightLbs),
+    cargoReference: String(input.cargoReference || "").trim(),
+    cargoManifest: String(input.cargoManifest || "").trim(),
+    cargoNotes: String(input.cargoNotes || "").trim(),
     origin: String(input.origin || "").trim(),
     destination: String(input.destination || "").trim(),
     status,
     eta: String(input.eta || "").trim(),
-    locationName: String(input.locationName || "").trim(),
+    locationName: currentLocationName,
+    currentLocationName,
+    currentLatitude: numberOrBlank(input.currentLatitude),
+    currentLongitude: numberOrBlank(input.currentLongitude),
+    currentLocationUpdatedAt: toIso(input.currentLocationUpdatedAt) || toIso(input.lastUpdated) || nowIso(),
     manager: String(input.manager || "Ops desk").trim(),
     risk: String(input.risk || "On track").trim(),
-    progress: getProgress(status),
+    progress: explicitProgress === "" ? getProgress(status) : Math.max(0, Math.min(100, explicitProgress)),
     createdAt: toIso(input.createdAt) || nowIso(),
     lastUpdated: toIso(input.lastUpdated) || nowIso()
   };
@@ -392,7 +415,7 @@ async function createEmailUpdate(shipment, reason, preferenceKey = "statusUpdate
   const payload = {
     to: normalizeEmail(shipment.receiverEmail),
     subject: `ShipOverseas update for ${shipment.trackingId}`,
-    body: `Hello ${shipment.receiverName || "customer"}, your shipment ${shipment.trackingId} is now ${shipment.status}. ETA: ${shipment.eta}. ${reason}`,
+    body: `Hello ${shipment.receiverName || "customer"}, your shipment ${shipment.trackingId} is now ${shipment.status}. Current location: ${shipment.currentLocationName || shipment.locationName || "updating"}. ETA: ${shipment.eta}. ${reason}`,
     status: "firebase-recorded",
     provider: "firestore",
     preferenceKey,
@@ -422,12 +445,50 @@ async function updateShipment(trackingId, changes = {}) {
   await requireReady();
   requireAdminUser();
   const shipment = await findShipment(trackingId);
-  const allowed = ["status", "eta", "locationName", "risk", "receiverEmail", "receiverName", "vessel", "cargo", "origin", "destination"];
+  const allowed = [
+    "status",
+    "eta",
+    "locationName",
+    "currentLocationName",
+    "currentLatitude",
+    "currentLongitude",
+    "progress",
+    "risk",
+    "receiverEmail",
+    "receiverName",
+    "vessel",
+    "cargo",
+    "cargoType",
+    "cargoCondition",
+    "cargoQuantity",
+    "cargoLengthIn",
+    "cargoWidthIn",
+    "cargoHeightIn",
+    "cargoVolumeCuFt",
+    "cargoWeightLbs",
+    "cargoReference",
+    "cargoManifest",
+    "cargoNotes",
+    "origin",
+    "destination"
+  ];
   const next = { ...shipment };
   allowed.forEach((key) => {
-    if (changes[key] !== undefined) next[key] = key === "receiverEmail" ? normalizeEmail(changes[key]) : String(changes[key]).trim();
+    if (changes[key] === undefined) return;
+    if (key === "receiverEmail") {
+      next[key] = normalizeEmail(changes[key]);
+      return;
+    }
+    if (["currentLatitude", "currentLongitude", "progress", "cargoQuantity", "cargoLengthIn", "cargoWidthIn", "cargoHeightIn", "cargoVolumeCuFt", "cargoWeightLbs"].includes(key)) {
+      next[key] = numberOrBlank(changes[key]);
+      return;
+    }
+    next[key] = String(changes[key]).trim();
   });
-  next.progress = getProgress(next.status);
+  if (next.currentLocationName) next.locationName = next.currentLocationName;
+  if (!next.currentLocationName && next.locationName) next.currentLocationName = next.locationName;
+  next.currentLocationUpdatedAt = nowIso();
+  next.progress = next.progress === "" ? getProgress(next.status) : Math.max(0, Math.min(100, Number(next.progress)));
   next.lastUpdated = nowIso();
   await firestoreMod.updateDoc(firestoreMod.doc(db, "shipments", shipment.trackingId), next);
   const preferenceKey = String(next.risk || "").toLowerCase().includes("watch") ? "riskAlerts" : "statusUpdates";
@@ -442,7 +503,14 @@ async function advanceShipment(trackingId) {
   const shipment = await findShipment(trackingId);
   const index = Math.max(0, statusSteps.findIndex((step) => step.name === shipment.status));
   const nextStatus = statusSteps[Math.min(index + 1, statusSteps.length - 1)].name;
-  return updateShipment(trackingId, { status: nextStatus, locationName: shipment.locationName, risk: shipment.risk, eta: shipment.eta });
+  return updateShipment(trackingId, {
+    status: nextStatus,
+    currentLocationName: shipment.currentLocationName || shipment.locationName,
+    currentLatitude: shipment.currentLatitude,
+    currentLongitude: shipment.currentLongitude,
+    risk: shipment.risk,
+    eta: shipment.eta
+  });
 }
 
 async function notifyShipment(trackingId) {
