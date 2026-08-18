@@ -182,7 +182,6 @@ const elements = {
   profileDetailEmail: document.querySelector("#profileDetailEmail"),
   profileCreatedAt: document.querySelector("#profileCreatedAt"),
   profileScope: document.querySelector("#profileScope"),
-  profileAdminRule: document.querySelector("#profileAdminRule"),
   profileEmailStatus: document.querySelector("#profileEmailStatus"),
   profileLatestShipment: document.querySelector("#profileLatestShipment"),
   profileLatestEta: document.querySelector("#profileLatestEta"),
@@ -889,7 +888,6 @@ function renderProfilePage() {
   elements.profileDetailEmail.textContent = state.user.email;
   elements.profileCreatedAt.textContent = formatDateTime(state.user.createdAt);
   elements.profileScope.textContent = isAdmin() ? "All customer shipments" : "Shipments linked to this email";
-  elements.profileAdminRule.textContent = isAdmin() ? "Can create and update packages" : "Admin tools hidden";
   elements.profileEmailStatus.textContent = state.emails.length ? `${state.emails.length} records` : "Ready";
   elements.profileLatestShipment.textContent = latestShipment ? latestShipment.trackingId : "No shipments yet";
   elements.profileLatestEta.textContent = latestShipment ? formatDate(latestShipment.eta) : "-";
