@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-current-pin-map";
+import { firebaseClient } from "./firebase-client.js?v=20260818-valid-tracking";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";

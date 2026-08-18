@@ -399,6 +399,16 @@ async function listShipments() {
   return sortNewest(normalizeSnapshot(snapshot).map(normalizeShipment));
 }
 
+function isTrackingId(value) {
+  return /^[A-Z]{4}[0-9]{7}$/.test(String(value || "").trim().toUpperCase());
+}
+
+async function getShipmentByTrackingId(trackingId) {
+  const snapshot = await firestoreMod.getDoc(firestoreMod.doc(db, "shipments", trackingId));
+  if (!snapshot.exists()) return null;
+  return normalizeShipment({ id: snapshot.id, ...snapshot.data() });
+}
+
 async function findShipment(lookup) {
   await requireReady();
   const user = requireAuthUser();
@@ -406,10 +416,18 @@ async function findShipment(lookup) {
   const shipments = await listShipments();
   const found = shipments.find((shipment) => shipment.trackingId === normalizedLookup || shipment.billOfLading === normalizedLookup);
   if (found) return found;
+  if (isTrackingId(normalizedLookup)) {
+    try {
+      const directShipment = await getShipmentByTrackingId(normalizedLookup);
+      if (directShipment) return directShipment;
+    } catch (error) {
+      throw normalizeFirebaseError(error);
+    }
+  }
   throw new Error(
     isAdminEmail(user.email)
       ? "Shipment not found."
-      : `Shipment not found for ${normalizeEmail(user.email)}. Ask operations to set Receiver Email to this login email, then search the exact tracking ID again.`
+      : "Shipment not found. Check the tracking number and try again."
   );
 }
 
