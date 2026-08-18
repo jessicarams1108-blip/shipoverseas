@@ -3,12 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ShipOverseas Cargo Control</title>
+    <title>ShipOversea | International Cargo Shipping and Tracking</title>
     <meta
       name="description"
-      content="ShipOverseas sea cargo tracking portal with customer login, ocean route visibility, email updates, and container risk alerts."
+      content="ShipOversea provides international cargo shipping support, shipment tracking, customer updates, and transparent logistics communication."
     />
-    <link rel="stylesheet" href="./styles.css?v=20260817-settings-audit" />
+    <link rel="canonical" href="https://www.shipoversea.site/" />
+    <meta property="og:title" content="ShipOversea International Cargo Shipping" />
+    <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.shipoversea.site/" />
+    <link rel="stylesheet" href="./styles.css?v=20260818-production-login" />
   </head>
   <body>
     <header class="topbar">
@@ -22,8 +27,8 @@
       </a>
       <nav class="nav-links" aria-label="Main navigation">
         <a href="#home">Home</a>
-        <a href="#tracking">Track</a>
-        <a href="#features">Features</a>
+        <a href="#features">Services</a>
+        <a href="#tracking">Track Shipment</a>
         <a href="#portal">Portal</a>
         <a class="admin-only hidden" href="#backend" data-admin-only>Ops</a>
       </nav>
@@ -42,14 +47,18 @@
     <main class="shell">
       <section id="home" class="hero-band dashboard-surface" data-page="home" aria-label="ShipOverseas home">
         <div class="hero-copy">
-          <img class="hero-logo" src="./assets/shipoverseas-logo-clean.png" alt="ShipOverseas" />
-          <p class="eyebrow">SEA FREIGHT CUSTOMER PORTAL</p>
-          <h1>Reliable ocean freight visibility from port departure to final release.</h1>
+          <p class="eyebrow">International Cargo Shipping</p>
+          <h1>Ship Anywhere. Track Everything.</h1>
           <p class="hero-subtitle">
-            ShipOverseas gives importers and logistics teams a polished control center for live vessel location,
-            container milestones, risk alerts, customer support, and delivery-ready notifications.
+            Reliable international cargo shipping support with transparent tracking from pickup to final delivery.
           </p>
           <div class="hero-actions">
+            <a class="primary-link" href="#quote">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 5h16M4 12h16M4 19h10" />
+              </svg>
+              Get a Shipping Quote
+            </a>
             <a class="primary-link" href="#tracking">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="m21 21-4.35-4.35" />
@@ -62,15 +71,30 @@
                 <path d="M20 21a8 8 0 0 0-16 0" />
                 <circle cx="12" cy="8" r="4" />
               </svg>
-              Customer Portal
+              Customer Login
             </a>
           </div>
+          <div class="hero-trust-row" aria-label="ShipOversea service qualities">
+            <span>Ocean freight</span>
+            <span>Shipment updates</span>
+            <span>Support desk</span>
+          </div>
         </div>
+        <div class="hero-visual" aria-label="Container vessel at sea">
+          <div class="route-card">
+            <span class="card-tag">Track cargo movement</span>
+            <strong>Pickup to destination visibility</strong>
+            <small>Container, route, status, ETA, and support updates in one customer portal.</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="tracking-strip dashboard-surface" data-page="home" aria-label="Quick shipment tracking">
         <form class="tracking-card" id="heroTrackingForm">
-          <span class="card-tag">Live lookup</span>
+          <span class="card-tag">Shipment lookup</span>
           <label for="heroTrackingInput">Tracking ID or Bill of Lading</label>
           <div class="tracking-row">
-            <input id="heroTrackingInput" autocomplete="off" placeholder="SOVX2409181" />
+            <input id="heroTrackingInput" autocomplete="off" placeholder="Enter tracking number" />
             <button class="primary-button" type="submit">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="m21 21-4.35-4.35" />
@@ -84,22 +108,60 @@
         </form>
       </section>
 
-      <section class="metric-grid dashboard-surface" data-page="home" aria-label="Shipment metrics">
+      <section id="quote" class="quote-panel dashboard-surface" data-page="home" aria-label="Request a shipping quote">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Request a Quote</p>
+            <h2>Tell us what you need to ship</h2>
+          </div>
+          <span class="status-pill">No instant pricing</span>
+        </div>
+        <form class="quote-form" id="quoteForm">
+          <label>
+            Your name
+            <input name="name" autocomplete="name" required placeholder="Full name or company" />
+          </label>
+          <label>
+            Email
+            <input name="email" type="email" autocomplete="email" required placeholder="you@example.com" />
+          </label>
+          <label>
+            Origin
+            <input name="origin" required placeholder="City, country" />
+          </label>
+          <label>
+            Destination
+            <input name="destination" required placeholder="City, country" />
+          </label>
+          <label>
+            Cargo details
+            <textarea name="cargo" required placeholder="Package type, weight, dimensions, quantity"></textarea>
+          </label>
+          <button class="primary-button" type="submit">Submit Quote Request</button>
+          <p class="form-note" id="quoteMessage" role="status"></p>
+        </form>
+      </section>
+
+      <section class="journey-panel dashboard-surface" data-page="home" aria-label="Customer shipping journey">
         <article>
-          <span id="metricActive">0</span>
-          <p>Active voyages</p>
+          <span>01</span>
+          <strong>Request a quote</strong>
+          <p>Share the origin, destination, cargo details, and preferred service level.</p>
         </article>
         <article>
-          <span id="metricDelayed">0</span>
-          <p>Risk alerts</p>
+          <span>02</span>
+          <strong>Book the shipment</strong>
+          <p>Operations prepares the shipment record and assigns a tracking number.</p>
         </article>
         <article>
-          <span id="metricCustomers">0</span>
-          <p>Customers</p>
+          <span>03</span>
+          <strong>Track progress</strong>
+          <p>Customers can follow status, route, container, ETA, and important notes.</p>
         </article>
         <article>
-          <span id="metricEmails">0</span>
-          <p>Email updates</p>
+          <span>04</span>
+          <strong>Get support</strong>
+          <p>Use the customer portal to ask questions and keep communication attached to the account.</p>
         </article>
       </section>
 
@@ -173,34 +235,34 @@
       <section id="features" class="feature-panel dashboard-surface" data-page="features" aria-label="Feature set">
         <div class="section-head">
           <div>
-            <p class="eyebrow">API-READY FEATURES</p>
-            <h2>What ShipOverseas can support</h2>
+            <p class="eyebrow">Services</p>
+            <h2>Cargo support built around the shipment journey</h2>
           </div>
         </div>
         <div class="feature-grid">
           <a href="#feature-container-tracking" data-feature-link="container-tracking">
-            <strong>Container Tracking API</strong>
-            <p>Track loaded, departed, arrived, discharged, and gate-out events by container or bill of lading.</p>
+            <strong>Container Shipping</strong>
+            <p>Manage ocean freight milestones by tracking number, bill of lading, or container ID.</p>
           </a>
           <a href="#feature-eta-etd-alerts" data-feature-link="eta-etd-alerts">
-            <strong>ETA and ETD Alerts</strong>
-            <p>Warn customers and operations teams when a sailing or arrival changes from the planned schedule.</p>
+            <strong>Shipment Updates</strong>
+            <p>Keep customers informed when sailing, arrival, customs, or delivery information changes.</p>
           </a>
           <a href="#feature-detention-demurrage" data-feature-link="detention-demurrage">
-            <strong>Detention and Demurrage</strong>
-            <p>Flag fees risk when containers stay too long at terminal or after free days.</p>
+            <strong>Exception Monitoring</strong>
+            <p>Flag detention, delay, and release risks so support can act before issues grow.</p>
           </a>
           <a href="#feature-rolled-container" data-feature-link="rolled-container">
-            <strong>Rolled Container</strong>
-            <p>Show when a container missed the planned vessel and is moved to a later sailing.</p>
+            <strong>Route Changes</strong>
+            <p>Record missed sailings, revised routes, and updated ETAs with a clear customer explanation.</p>
           </a>
           <a href="#feature-pickup-notice" data-feature-link="pickup-notice">
             <strong>Pick-up Notice</strong>
             <p>Notify the receiver when cargo is ready for release at the destination terminal.</p>
           </a>
           <a href="#feature-email-updates" data-feature-link="email-updates">
-            <strong>Email Updates</strong>
-            <p>Every status change creates a customer email record and can connect to a real email provider.</p>
+            <strong>Customer Support</strong>
+            <p>Keep shipment questions and support replies connected to each customer account.</p>
           </a>
         </div>
       </section>
@@ -227,13 +289,10 @@
             </label>
             <label>
               Password
-              <input name="password" type="password" required placeholder="demo123" />
+              <input name="password" type="password" required placeholder="Enter password" />
             </label>
             <button class="primary-button" type="submit">Login</button>
             <p class="form-note" id="authMessage" role="status"></p>
-            <div class="demo-logins">
-              <button class="secondary-button" type="button" data-demo="customer">Use Customer Demo</button>
-            </div>
           </form>
           <form class="auth-form hidden" id="registerForm">
             <label>
@@ -246,7 +305,7 @@
             </label>
             <label>
               Password
-              <input name="password" type="password" required minlength="4" placeholder="Create password" />
+              <input name="password" type="password" required minlength="6" placeholder="Create password" />
             </label>
             <button class="primary-button" type="submit">Create Account</button>
           </form>
@@ -264,7 +323,7 @@
             </label>
             <label data-local-reset-only>
               New Password
-              <input name="password" type="password" minlength="4" placeholder="New password" />
+              <input name="password" type="password" minlength="6" placeholder="New password" />
             </label>
             <button class="primary-button" type="submit" data-local-reset-only>Update Password</button>
             <p class="form-note" id="resetMessage" role="status"></p>
@@ -629,10 +688,10 @@
 
     <footer class="footer">
       <img src="./assets/shipoverseas-logo-clean.png" alt="ShipOverseas" />
-      <p>ShipOverseas Cargo Control - container tracking, customer notifications, and ocean route visibility.</p>
+      <p>ShipOversea - international cargo shipping, shipment tracking, and customer support.</p>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20260817-firebase"></script>
+    <script type="module" src="./app.js?v=20260818-production-login"></script>
   </body>
 </html>

@@ -30,57 +30,6 @@ const defaultPreferences = {
   weeklySummary: false
 };
 
-const seedShipments = [
-  {
-    trackingId: "SOVX2409181",
-    container: "SOU7284410",
-    billOfLading: "BL-SOV-2409181",
-    receiverName: "Maya Import Desk",
-    receiverEmail: "customer@example.com",
-    vessel: "MV Pacific Ledger",
-    cargo: "Electronics",
-    origin: "Shanghai",
-    destination: "Los Angeles",
-    status: "At Sea",
-    eta: "2026-08-29",
-    locationName: "North Pacific Ocean",
-    manager: "Nadia Cole",
-    risk: "On track"
-  },
-  {
-    trackingId: "SOVX7814402",
-    container: "SOU9182456",
-    billOfLading: "BL-SOV-7814402",
-    receiverName: "Atlantic Home Supply",
-    receiverEmail: "customer@example.com",
-    vessel: "MV Atlantic Mariner",
-    cargo: "Furniture",
-    origin: "Rotterdam",
-    destination: "New York",
-    status: "Customs Review",
-    eta: "2026-08-21",
-    locationName: "New York Terminal",
-    manager: "Owen Harris",
-    risk: "Detention watch"
-  },
-  {
-    trackingId: "SOVX9912045",
-    container: "SOU3347815",
-    billOfLading: "BL-SOV-9912045",
-    receiverName: "Northline Pharma",
-    receiverEmail: "pharma@example.com",
-    vessel: "MV Coral Horizon",
-    cargo: "Pharmaceuticals",
-    origin: "Singapore",
-    destination: "Hamburg",
-    status: "Departed Port",
-    eta: "2026-09-04",
-    locationName: "Malacca Strait",
-    manager: "Mara Singh",
-    risk: "Cold chain priority"
-  }
-];
-
 let app;
 let auth;
 let db;
@@ -387,23 +336,9 @@ async function addAuditLog(action, details = {}) {
   return { id: ref.id, ...payload };
 }
 
-async function seedDemoShipmentsIfNeeded() {
-  if (!auth.currentUser || !isAdminEmail(auth.currentUser.email)) return;
-  const snapshot = await firestoreMod.getDocs(firestoreMod.collection(db, "shipments"));
-  if (!snapshot.empty) return;
-  const batch = firestoreMod.writeBatch(db);
-  seedShipments.forEach((shipment) => {
-    const normalized = normalizeShipment(shipment);
-    batch.set(firestoreMod.doc(db, "shipments", normalized.trackingId), normalized);
-  });
-  await batch.commit();
-  await addAuditLog("firebase.seeded", { shipments: seedShipments.length });
-}
-
 async function listShipments() {
   await requireReady();
   if (!auth.currentUser) throw new Error("Login required.");
-  await seedDemoShipmentsIfNeeded();
   let snapshot;
   if (isAdminEmail(auth.currentUser.email)) {
     snapshot = await firestoreMod.getDocs(firestoreMod.collection(db, "shipments"));

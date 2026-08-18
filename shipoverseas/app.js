@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260817-firebase";
+import { firebaseClient } from "./firebase-client.js?v=20260818-production-login";
 
 const TOKEN_KEY = "shipoverseas.token";
 const THEME_KEY = "shipoverseas.theme";
@@ -31,29 +31,29 @@ const portGeo = {
 
 const featurePages = {
   "container-tracking": {
-    eyebrow: "Container Tracking API",
-    title: "Container Tracking API",
-    summary: "Track container milestones from booking through delivery using a tracking number, bill of lading, or container ID.",
+    eyebrow: "Container Shipping",
+    title: "Container Shipping Visibility",
+    summary: "Track cargo milestones from booking through delivery using a tracking number, bill of lading, or container ID.",
     highlights: ["Loaded, departed, arrived, discharged, gate-in and gate-out milestones", "Container, vessel, route, ETA, and location fields", "Customer-facing status pages without exposing private operations tools"],
     workflow: ["Receive tracking or bill of lading", "Match shipment record", "Render route, milestone, risk, and ETA data", "Notify customer when the status changes"]
   },
   "eta-etd-alerts": {
-    eyebrow: "Schedule Intelligence",
-    title: "ETA and ETD Alerts",
+    eyebrow: "Shipment Updates",
+    title: "ETA and Status Updates",
     summary: "Keep customers and operations teams ahead of sailing changes, port delays, and arrival updates.",
     highlights: ["ETA/ETD change detection", "Delay severity notes", "Email and portal notifications", "Live map context for revised route progress"],
     workflow: ["Compare latest schedule against planned shipment", "Flag delay or early movement", "Update shipment timeline", "Send a customer notification"]
   },
   "detention-demurrage": {
-    eyebrow: "Cost Risk",
-    title: "Detention and Demurrage",
+    eyebrow: "Exception Monitoring",
+    title: "Delay and Release Risk Monitoring",
     summary: "Surface fee risks when containers remain too long at terminal, destination yard, or outside free-day windows.",
     highlights: ["Detention watch notes", "Demurrage risk labels", "Destination terminal status", "Priority reminders before fees grow"],
     workflow: ["Track arrival and release milestones", "Compare dwell time to free days", "Mark risk level", "Notify customer and operations"]
   },
   "rolled-container": {
-    eyebrow: "Exception Handling",
-    title: "Rolled Container",
+    eyebrow: "Route Changes",
+    title: "Route and Sailing Changes",
     summary: "Show when cargo misses its planned vessel and moves to a later sailing, with a clear customer-facing explanation.",
     highlights: ["Missed vessel detection", "Replacement sailing details", "Updated ETA", "Customer support chat context"],
     workflow: ["Identify missed load or vessel change", "Attach new sailing detail", "Update ETA and risk note", "Send customer update"]
@@ -66,11 +66,11 @@ const featurePages = {
     workflow: ["Confirm arrival or customs release", "Mark ready for pickup", "Send release notice", "Track final delivery milestone"]
   },
   "email-updates": {
-    eyebrow: "Notifications",
-    title: "Email Updates",
-    summary: "Record and later send customer messages for every package create, status update, and support event.",
-    highlights: ["Local simulated outbox", "Customer email inbox", "Password reset emails", "Provider-ready path for SMTP, Resend, or SendGrid"],
-    workflow: ["Create status event", "Generate customer message", "Store outbox record", "Deliver through email provider when connected"]
+    eyebrow: "Customer Support",
+    title: "Customer Support and Notifications",
+    summary: "Record customer messages and shipment notification history in one account-based workspace.",
+    highlights: ["Customer support chat", "Shipment notification history", "Password reset emails", "Provider-ready path for SMTP, Resend, or SendGrid"],
+    workflow: ["Create status event", "Record customer message", "Store notification history", "Reply through support desk"]
   }
 };
 
@@ -122,6 +122,8 @@ const elements = {
   heroTrackingForm: document.querySelector("#heroTrackingForm"),
   heroTrackingInput: document.querySelector("#heroTrackingInput"),
   trackingMessage: document.querySelector("#trackingMessage"),
+  quoteForm: document.querySelector("#quoteForm"),
+  quoteMessage: document.querySelector("#quoteMessage"),
   quickList: document.querySelector("#quickList"),
   metricActive: document.querySelector("#metricActive"),
   metricDelayed: document.querySelector("#metricDelayed"),
@@ -153,7 +155,6 @@ const elements = {
   authMessage: document.querySelector("#authMessage"),
   resetMessage: document.querySelector("#resetMessage"),
   localResetOnly: document.querySelectorAll("[data-local-reset-only]"),
-  demoLogins: document.querySelectorAll(".demo-logins"),
   portalEmpty: document.querySelector("#portalEmpty"),
   customerContent: document.querySelector("#customerContent"),
   customerShipments: document.querySelector("#customerShipments"),
@@ -190,10 +191,18 @@ function useFirebase() {
   return state.usingFirebase && firebaseClient.isEnabled();
 }
 
+function canUseLocalApi() {
+  return ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
+}
+
+function requireAvailableBackend() {
+  if (useFirebase() || canUseLocalApi()) return;
+  throw new Error("Firebase is not connected on this live domain. Add shipoversea.site and www.shipoversea.site in Firebase Authentication authorized domains, then refresh.");
+}
+
 function configureFirebaseUi() {
   const firebaseMode = useFirebase();
   elements.localResetOnly.forEach((item) => item.classList.toggle("hidden", firebaseMode));
-  elements.demoLogins.forEach((item) => item.classList.toggle("hidden", firebaseMode));
   elements.requestResetButton.textContent = firebaseMode ? "Send Reset Email" : "Send Reset Code";
   if (elements.resetForm?.elements?.code) {
     elements.resetForm.elements.code.required = !firebaseMode;
@@ -355,11 +364,11 @@ function makeMapEmbedUrl(shipment, progress) {
 }
 
 async function loadBootstrap() {
-  if (useFirebase() && state.user) {
+  if (useFirebase()) {
     try {
       const data = await firebaseClient.getBootstrap();
-      state.statusSteps = data.statusSteps;
-      state.shipments = data.shipments;
+      state.statusSteps = data.statusSteps || [];
+      state.shipments = data.shipments || [];
       if (!state.selectedShipment) {
         state.selectedShipment = state.shipments[0] || null;
       }
@@ -369,8 +378,8 @@ async function loadBootstrap() {
     }
   }
   const data = await apiFetch("/api/bootstrap");
-  state.statusSteps = data.statusSteps;
-  state.shipments = data.shipments;
+  state.statusSteps = data.statusSteps || [];
+  state.shipments = data.shipments || [];
   if (!state.selectedShipment) {
     state.selectedShipment = state.shipments[0] || null;
   }
@@ -531,6 +540,7 @@ function toggleProfileMenu() {
 }
 
 function renderMetrics() {
+  if (!elements.metricActive || !elements.metricDelayed || !elements.metricCustomers || !elements.metricEmails) return;
   const shipments = visibleShipments();
   const active = shipments.filter((item) => item.status !== "Delivered").length;
   const risks = shipments.filter((item) => getRisk(item).className !== "good").length;
@@ -554,7 +564,16 @@ function renderQuickList() {
 
 function renderDetails() {
   const shipment = state.selectedShipment;
-  if (!shipment) return;
+  if (!shipment) {
+    elements.detailTrackingId.textContent = "No shipment selected";
+    elements.detailStatus.textContent = "-";
+    elements.detailRoute.textContent = "Enter a tracking number or log in to view assigned shipments.";
+    elements.detailEta.textContent = "-";
+    elements.detailProgressText.textContent = "0%";
+    elements.detailProgressBar.style.width = "0%";
+    elements.detailList.innerHTML = `<div><dt>Status</dt><dd>No shipment loaded</dd></div>`;
+    return;
+  }
   const progress = shipment.progress ?? getProgress(shipment.status);
   const risk = getRisk(shipment);
   elements.detailTrackingId.textContent = shipment.trackingId;
@@ -588,7 +607,13 @@ function renderDetails() {
 
 function renderMap() {
   const shipment = state.selectedShipment;
-  if (!shipment) return;
+  if (!shipment) {
+    elements.mapRouteTitle.textContent = "Shipment route";
+    elements.riskChip.textContent = "Waiting";
+    elements.riskChip.className = "risk-chip";
+    elements.liveMapStatus.textContent = "Log in or search a tracking number to view route data";
+    return;
+  }
   const origin = routePoint(shipment.origin, { x: 150, y: 170 });
   const destination = routePoint(shipment.destination, { x: 530, y: 175 });
   const progress = shipment.progress ?? getProgress(shipment.status);
@@ -615,7 +640,11 @@ function renderMap() {
 
 function renderTimeline() {
   const shipment = state.selectedShipment;
-  if (!shipment) return;
+  if (!shipment) {
+    elements.lastUpdated.textContent = "-";
+    elements.timeline.innerHTML = `<li class="current"><strong>No shipment selected</strong><span>Search or log in to load details</span></li>`;
+    return;
+  }
   const currentIndex = Math.max(0, state.statusSteps.findIndex((step) => step.name === shipment.status));
   elements.timeline.innerHTML = state.statusSteps
     .slice(0, 6)
@@ -988,6 +1017,7 @@ async function handleTrackingSubmit(event) {
   const trackingId = elements.heroTrackingInput.value.trim().toUpperCase();
   if (!trackingId) return;
   try {
+    requireAvailableBackend();
     if (useFirebase() && state.user) {
       const shipment = await firebaseClient.findShipment(trackingId);
       state.selectedShipment = shipment;
@@ -1016,6 +1046,7 @@ async function login(event) {
   const email = String(data.get("email") || "").trim();
   setAuthMessage("");
   try {
+    requireAvailableBackend();
     if (useFirebase()) {
       state.user = await firebaseClient.login(email, data.get("password"));
       state.token = "firebase";
@@ -1050,11 +1081,56 @@ async function login(event) {
   }
 }
 
+async function submitQuoteRequest(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const data = new FormData(form);
+  const message = [
+    "Shipping quote request",
+    `Name: ${data.get("name")}`,
+    `Email: ${data.get("email")}`,
+    `Origin: ${data.get("origin")}`,
+    `Destination: ${data.get("destination")}`,
+    `Cargo: ${data.get("cargo")}`
+  ].join("\n");
+  elements.quoteMessage.textContent = "";
+  if (!state.user) {
+    elements.quoteMessage.textContent = "Create an account or log in first, then submit the quote request so support can reply to your profile.";
+    navigateToHash("#portal");
+    toast("Log in to submit a quote request.");
+    return;
+  }
+  if (isAdmin()) {
+    elements.quoteMessage.textContent = "Quote requests are for customer accounts.";
+    toast("Use a customer account to submit a quote.");
+    return;
+  }
+  try {
+    const response = useFirebase()
+      ? await firebaseClient.createOrSendCustomerMessage({ subject: "Shipping quote request", message })
+      : await apiFetch("/api/support/conversations", {
+          method: "POST",
+          body: { subject: "Shipping quote request", message }
+        });
+    state.selectedSupportConversationId = response.conversation.id;
+    state.supportMessages = response.messages;
+    form.reset();
+    await loadPrivateData();
+    elements.quoteMessage.textContent = "Quote request sent. Support will reply in your customer portal.";
+    renderAll();
+    toast("Quote request sent.");
+  } catch (error) {
+    elements.quoteMessage.textContent = error.message;
+    toast(error.message);
+  }
+}
+
 async function register(event) {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
   setAuthMessage("");
   try {
+    requireAvailableBackend();
     if (useFirebase()) {
       state.user = await firebaseClient.register({
         name: data.get("name"),
@@ -1092,11 +1168,13 @@ async function register(event) {
 async function requestPasswordReset() {
   const email = elements.resetForm.elements.email.value.trim();
   setAuthMessage("");
+  elements.resetMessage.textContent = "";
   if (!email) {
     toast("Enter your account email first.");
     return;
   }
   try {
+    requireAvailableBackend();
     if (useFirebase()) {
       const response = await firebaseClient.requestPasswordReset(email);
       elements.resetMessage.textContent = response.message;
@@ -1116,6 +1194,7 @@ async function requestPasswordReset() {
     }
     toast("Reset code sent.");
   } catch (error) {
+    elements.resetMessage.textContent = error.message;
     toast(error.message);
   }
 }
@@ -1469,13 +1548,6 @@ function switchAuthTab(tabName) {
   elements.resetForm.classList.toggle("hidden", tabName !== "reset");
 }
 
-function useDemoLogin(type) {
-  const form = elements.loginForm;
-  form.elements.email.value = "customer@example.com";
-  form.elements.password.value = "demo123";
-  switchAuthTab("login");
-}
-
 function goBack() {
   if (window.history.length > 1) {
     window.history.back();
@@ -1502,6 +1574,7 @@ function navigateToHash(hash) {
 
 function bindEvents() {
   elements.heroTrackingForm.addEventListener("submit", handleTrackingSubmit);
+  elements.quoteForm?.addEventListener("submit", submitQuoteRequest);
   elements.loginForm.addEventListener("submit", login);
   elements.registerForm.addEventListener("submit", register);
   elements.resetForm.addEventListener("submit", confirmPasswordReset);
@@ -1548,9 +1621,6 @@ function bindEvents() {
   });
   document.querySelectorAll("[data-auth-tab]").forEach((button) => {
     button.addEventListener("click", () => switchAuthTab(button.dataset.authTab));
-  });
-  document.querySelectorAll("[data-demo]").forEach((button) => {
-    button.addEventListener("click", () => useDemoLogin(button.dataset.demo));
   });
   window.addEventListener("hashchange", handleHashChange);
   window.addEventListener("popstate", handleHashChange);
