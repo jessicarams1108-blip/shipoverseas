@@ -964,6 +964,12 @@ body.dark .live-map {
   padding: 0.9rem;
 }
 
+.warning-state {
+  border-color: color-mix(in srgb, var(--red) 34%, var(--line));
+  background: color-mix(in srgb, var(--red) 7%, var(--surface));
+  color: var(--ink);
+}
+
 .feature-grid a,
 .tools-grid a {
   display: block;

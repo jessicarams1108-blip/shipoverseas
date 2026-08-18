@@ -137,9 +137,18 @@ function sortNewest(items) {
   return items.slice().sort((a, b) => new Date(b.lastUpdated || b.updatedAt || b.createdAt || 0) - new Date(a.lastUpdated || a.updatedAt || a.createdAt || 0));
 }
 
+function isFirestoreOfflineError(error) {
+  const code = String(error?.code || "").toLowerCase();
+  const message = String(error?.message || "").toLowerCase();
+  return code.includes("unavailable") || message.includes("client is offline") || message.includes("offline");
+}
+
 function normalizeFirebaseError(error) {
   const code = error?.code || "";
   if (code.includes("permission-denied")) return new Error("Firebase permission denied. Check your Firestore rules and admin email.");
+  if (isFirestoreOfflineError(error)) {
+    return new Error("Firebase signed in, but Firestore data is offline. Check Firestore Database, browser network/ad blocker, then refresh.");
+  }
   if (code.includes("invalid-credential") || code.includes("user-not-found") || code.includes("wrong-password")) {
     return new Error("Invalid email or password. Use Reset Password to set a new Firebase password for this account.");
   }
@@ -151,6 +160,20 @@ function normalizeFirebaseError(error) {
   if (code.includes("weak-password")) return new Error("Password should be at least 6 characters.");
   if (code.includes("network-request-failed")) return new Error("Firebase network failed. Check your internet connection.");
   return new Error(error?.message || "Firebase request failed.");
+}
+
+function makeFallbackProfile(authUser, displayName = "", existing = {}) {
+  const email = normalizeEmail(authUser.email);
+  return {
+    id: authUser.uid,
+    name: displayName || existing.name || authUser.displayName || email.split("@")[0] || "ShipOverseas User",
+    email: authUser.email || email,
+    emailLower: email,
+    role: isAdminEmail(email) ? "admin" : "customer",
+    preferences: normalizePreferences(existing.preferences),
+    createdAt: toIso(existing.createdAt) || nowIso(),
+    updatedAt: nowIso()
+  };
 }
 
 async function loadSdk() {
@@ -214,22 +237,20 @@ function requireAdminUser() {
 }
 
 async function ensureUserProfile(authUser, displayName = "") {
-  const email = normalizeEmail(authUser.email);
-  const userRef = firestoreMod.doc(db, "users", authUser.uid);
-  const snapshot = await firestoreMod.getDoc(userRef);
-  const existing = snapshot.exists() ? snapshot.data() : {};
-  const profile = {
-    id: authUser.uid,
-    name: displayName || existing.name || authUser.displayName || email.split("@")[0] || "ShipOverseas User",
-    email: authUser.email || email,
-    emailLower: email,
-    role: isAdminEmail(email) ? "admin" : "customer",
-    preferences: normalizePreferences(existing.preferences),
-    createdAt: toIso(existing.createdAt) || nowIso(),
-    updatedAt: nowIso()
-  };
-  await firestoreMod.setDoc(userRef, profile, { merge: true });
-  return profile;
+  try {
+    const userRef = firestoreMod.doc(db, "users", authUser.uid);
+    const snapshot = await firestoreMod.getDoc(userRef);
+    const existing = snapshot.exists() ? snapshot.data() : {};
+    const profile = makeFallbackProfile(authUser, displayName, existing);
+    await firestoreMod.setDoc(userRef, profile, { merge: true });
+    return profile;
+  } catch (error) {
+    console.warn("Firestore profile sync failed; continuing with Auth profile.", error);
+    return {
+      ...makeFallbackProfile(authUser, displayName),
+      profileWarning: normalizeFirebaseError(error).message
+    };
+  }
 }
 
 async function getCurrentUser() {
@@ -610,21 +631,37 @@ async function exportData() {
 async function loadPrivateData() {
   await requireReady();
   const user = requireAuthUser();
-  const [shipments, emails, conversations] = await Promise.all([listShipments(), listEmailUpdates(), listSupportConversations()]);
-  const auditLogs = isAdminEmail(user.email) ? await listAuditLogs() : [];
-  return {
-    shipments,
-    myShipments: shipments,
-    emails,
-    supportConversations: conversations,
-    auditLogs
-  };
+  try {
+    const [shipments, emails, conversations] = await Promise.all([listShipments(), listEmailUpdates(), listSupportConversations()]);
+    const auditLogs = isAdminEmail(user.email) ? await listAuditLogs() : [];
+    return {
+      shipments,
+      myShipments: shipments,
+      emails,
+      supportConversations: conversations,
+      auditLogs,
+      dataWarning: ""
+    };
+  } catch (error) {
+    return {
+      shipments: [],
+      myShipments: [],
+      emails: [],
+      supportConversations: [],
+      auditLogs: [],
+      dataWarning: normalizeFirebaseError(error).message
+    };
+  }
 }
 
 async function getBootstrap() {
   await requireReady();
-  const shipments = auth.currentUser ? await listShipments() : [];
-  return { statusSteps, shipments };
+  try {
+    const shipments = auth.currentUser ? await listShipments() : [];
+    return { statusSteps, shipments, dataWarning: "" };
+  } catch (error) {
+    return { statusSteps, shipments: [], dataWarning: normalizeFirebaseError(error).message };
+  }
 }
 
 export const firebaseClient = {

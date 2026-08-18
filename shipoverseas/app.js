@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-tools-auth";
+import { firebaseClient } from "./firebase-client.js?v=20260818-firestore-login";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -158,6 +158,7 @@ const state = {
   supportConversations: [],
   supportMessages: [],
   auditLogs: [],
+  dataWarning: "",
   selectedSupportConversationId: "",
   activePage: "",
   selectedShipment: null,
@@ -444,6 +445,7 @@ async function loadBootstrap() {
       const data = await firebaseClient.getBootstrap();
       state.statusSteps = data.statusSteps || [];
       state.shipments = data.shipments || [];
+      state.dataWarning = data.dataWarning || "";
       if (!state.selectedShipment) {
         state.selectedShipment = state.shipments[0] || null;
       }
@@ -498,6 +500,7 @@ async function loadPrivateData() {
     state.supportConversations = [];
     state.supportMessages = [];
     state.auditLogs = [];
+    state.dataWarning = "";
     state.selectedSupportConversationId = "";
     return;
   }
@@ -507,6 +510,7 @@ async function loadPrivateData() {
     state.emails = data.emails;
     state.supportConversations = data.supportConversations;
     state.auditLogs = data.auditLogs;
+    state.dataWarning = data.dataWarning || "";
     if (isAdmin()) {
       state.shipments = data.shipments;
     }
@@ -528,6 +532,7 @@ async function loadPrivateData() {
   state.myShipments = shipmentsData.shipments;
   state.emails = emailsData.emails;
   state.supportConversations = supportData.conversations;
+  state.dataWarning = "";
   if (isAdmin()) {
     state.shipments = shipmentsData.shipments;
     const auditData = await apiFetch("/api/audit-logs");
@@ -771,7 +776,9 @@ function renderCustomerPortal() {
 
   const shipments = isAdmin() ? state.shipments : state.myShipments;
   elements.customerShipments.innerHTML =
-    shipments.length === 0
+    state.dataWarning
+      ? `<div class="empty-state warning-state">${escapeHtml(state.dataWarning)}</div>`
+      : shipments.length === 0
       ? `<div class="empty-state">No shipments are assigned to ${escapeHtml(state.user.email)} yet.</div>`
       : shipments
           .map(
@@ -806,6 +813,10 @@ function renderAdminBackend() {
 
   elements.adminLock.textContent = "Verified operations access";
   elements.adminLock.className = "admin-lock unlocked";
+  if (state.dataWarning) {
+    elements.adminLock.textContent = "Signed in - Firestore data offline";
+    elements.adminLock.className = "admin-lock";
+  }
 
   elements.adminShipmentSelect.innerHTML = state.shipments
     .map((shipment) => `<option value="${escapeHtml(shipment.trackingId)}">${escapeHtml(shipment.trackingId)} - ${escapeHtml(shipment.receiverName)}</option>`)
@@ -1168,7 +1179,9 @@ async function login(event) {
       await loadBootstrap();
       await loadPrivateData();
       renderAll();
-      toast(`Logged in with Firebase as ${state.user.email}`);
+      const loginWarning = state.user.profileWarning || state.dataWarning;
+      setAuthMessage(loginWarning ? `Logged in as ${state.user.email}. ${loginWarning}` : "");
+      toast(loginWarning ? "Logged in. Firestore data needs attention." : `Logged in with Firebase as ${state.user.email}`);
       return;
     }
     const response = await apiFetch("/api/login", {
@@ -1212,7 +1225,9 @@ async function register(event) {
       await loadBootstrap();
       await loadPrivateData();
       renderAll();
-      toast("Firebase account created.");
+      const registerWarning = state.user.profileWarning || state.dataWarning;
+      setAuthMessage(registerWarning ? `Account created. ${registerWarning}` : "");
+      toast(registerWarning ? "Account created. Firestore data needs attention." : "Firebase account created.");
       return;
     }
     const response = await apiFetch("/api/register", {
