@@ -163,6 +163,7 @@ async function loadSdk() {
   firestoreMod = firestoreModule;
   app = appModule.initializeApp(firebaseConfig);
   auth = authModule.getAuth(app);
+  await authModule.setPersistence(auth, authModule.browserLocalPersistence);
   db = firestoreModule.getFirestore(app);
   authReady = new Promise((resolve) => {
     authModule.onAuthStateChanged(

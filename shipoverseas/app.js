@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-no-quote";
+import { firebaseClient } from "./firebase-client.js?v=20260818-auth-persist";
 
 const TOKEN_KEY = "shipoverseas.token";
 const THEME_KEY = "shipoverseas.theme";
@@ -1511,12 +1511,23 @@ function goBack() {
 }
 
 function handleHashChange() {
+  if (window.location.hash === "#quote") {
+    window.history.replaceState({}, "", "#home");
+  }
   renderFeatureDetail();
   renderNavigationState();
 }
 
 function navigateToHash(hash) {
   const nextHash = hash || "#home";
+  if (nextHash === "#quote") {
+    window.history.pushState({}, "", "#home");
+    elements.profileMenu?.classList.add("hidden");
+    renderFeatureDetail();
+    renderNavigationState();
+    resetPageScroll();
+    return;
+  }
   if (window.location.hash !== nextHash) {
     window.history.pushState({}, "", nextHash);
   }
@@ -1582,6 +1593,9 @@ function bindEvents() {
 async function boot() {
   if (localStorage.getItem(THEME_KEY) === "dark") {
     document.body.classList.add("dark");
+  }
+  if (window.location.hash === "#quote") {
+    window.history.replaceState({}, "", "#home");
   }
   state.usingFirebase = await firebaseClient.init();
   configureFirebaseUi();
