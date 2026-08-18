@@ -187,7 +187,7 @@ async function loadSdk() {
   app = appModule.initializeApp(firebaseConfig);
   auth = authModule.getAuth(app);
   await authModule.setPersistence(auth, authModule.browserLocalPersistence);
-  db = firestoreModule.getFirestore(app);
+  db = firestoreModule.getFirestore(app, "default");
   authReady = new Promise((resolve) => {
     authModule.onAuthStateChanged(
       auth,

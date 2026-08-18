@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-firestore-login";
+import { firebaseClient } from "./firebase-client.js?v=20260818-firestore-db";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
