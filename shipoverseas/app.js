@@ -1,8 +1,16 @@
-import { firebaseClient } from "./firebase-client.js?v=20260819-ship-map-marker";
+import { countryCodes, countryLanguage, languageLabelFallback } from "./country-language.js?v=20260819-country-selector";
+import { firebaseClient } from "./firebase-client.js?v=20260819-country-selector";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
 const THEME_KEY = "shipoverseas.theme";
+const COUNTRY_KEY = "shipoverseas.country";
+const DEFAULT_COUNTRY = "US";
+const DEFAULT_LANGUAGE = "en";
+const countryNameFormatter = typeof Intl.DisplayNames === "function" ? new Intl.DisplayNames(["en"], { type: "region" }) : null;
+const languageNameFormatter = typeof Intl.DisplayNames === "function" ? new Intl.DisplayNames(["en"], { type: "language" }) : null;
+let googleTranslateReady = false;
+let translationRefreshTimer = 0;
 
 const portGeo = {
   Shanghai: { lat: 31.2304, lon: 121.4737 },
@@ -154,12 +162,16 @@ const state = {
   selectedSupportConversationId: "",
   activePage: "",
   selectedShipment: null,
+  country: "",
+  language: DEFAULT_LANGUAGE,
   usingFirebase: false
 };
 
 const elements = {
   backButton: document.querySelector("#backButton"),
   themeToggle: document.querySelector("#themeToggle"),
+  countrySelect: document.querySelector("#countrySelect"),
+  countryLanguageLabel: document.querySelector("#countryLanguageLabel"),
   portalGrid: document.querySelector("#portal"),
   authPanel: document.querySelector(".auth-panel"),
   authSummary: document.querySelector("#authSummary"),
@@ -276,6 +288,144 @@ function configureFirebaseUi() {
   if (elements.resetForm?.elements?.password) {
     elements.resetForm.elements.password.required = !firebaseMode;
   }
+}
+
+function normalizeCountryCode(countryCode) {
+  const normalized = String(countryCode || "").trim().toUpperCase();
+  return countryCodes.includes(normalized) ? normalized : DEFAULT_COUNTRY;
+}
+
+function detectCountryCode() {
+  const locale = Intl.DateTimeFormat().resolvedOptions().locale || "";
+  const match = locale.match(/[-_]([A-Z]{2})\b/i);
+  return normalizeCountryCode(match?.[1] || DEFAULT_COUNTRY);
+}
+
+function languageForCountry(countryCode) {
+  return countryLanguage[normalizeCountryCode(countryCode)] || DEFAULT_LANGUAGE;
+}
+
+function countryName(countryCode) {
+  try {
+    return countryNameFormatter?.of(countryCode) || countryCode;
+  } catch {
+    return countryCode;
+  }
+}
+
+function languageName(languageCode) {
+  const fallback = languageLabelFallback[languageCode];
+  if (fallback) return fallback;
+  const displayCode = { iw: "he", jw: "jv", "zh-CN": "zh-Hans", "zh-TW": "zh-Hant" }[languageCode] || languageCode;
+  try {
+    return languageNameFormatter?.of(displayCode) || languageCode;
+  } catch {
+    return languageCode;
+  }
+}
+
+function writeTranslateCookie(languageCode) {
+  const value = `/en/${languageCode || DEFAULT_LANGUAGE}`;
+  const maxAge = 60 * 60 * 24 * 365;
+  document.cookie = `googtrans=${value};path=/;max-age=${maxAge};SameSite=Lax`;
+  const baseDomain = window.location.hostname.replace(/^www\./, "");
+  if (baseDomain.includes(".")) {
+    document.cookie = `googtrans=${value};domain=.${baseDomain};path=/;max-age=${maxAge};SameSite=Lax`;
+  }
+}
+
+function applyGoogleTranslation(languageCode = state.language, retryCount = 0) {
+  if (!languageCode) return;
+  document.documentElement.lang = languageCode === "iw" ? "he" : languageCode;
+  writeTranslateCookie(languageCode);
+  const combo = document.querySelector(".goog-te-combo");
+  if (!combo) {
+    if (retryCount < 24) {
+      window.setTimeout(() => applyGoogleTranslation(languageCode, retryCount + 1), 350);
+    }
+    return;
+  }
+  const nextValue = languageCode === DEFAULT_LANGUAGE ? "" : languageCode;
+  if (combo.value !== nextValue) {
+    combo.value = nextValue;
+  }
+  combo.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function scheduleTranslationRefresh() {
+  if (!googleTranslateReady || !state.language || state.language === DEFAULT_LANGUAGE) return;
+  window.clearTimeout(translationRefreshTimer);
+  translationRefreshTimer = window.setTimeout(() => applyGoogleTranslation(state.language), 400);
+}
+
+function setCountry(countryCode, { persist = false, translate = false } = {}) {
+  const nextCountry = normalizeCountryCode(countryCode);
+  const nextLanguage = languageForCountry(nextCountry);
+  state.country = nextCountry;
+  state.language = nextLanguage;
+  document.documentElement.dataset.country = nextCountry;
+  document.documentElement.lang = nextLanguage === "iw" ? "he" : nextLanguage;
+  if (elements.countrySelect && elements.countrySelect.value !== nextCountry) {
+    elements.countrySelect.value = nextCountry;
+  }
+  if (elements.countryLanguageLabel) {
+    elements.countryLanguageLabel.textContent = languageName(nextLanguage);
+  }
+  if (persist) {
+    localStorage.setItem(COUNTRY_KEY, nextCountry);
+  }
+  if (translate) {
+    applyGoogleTranslation(nextLanguage);
+  }
+}
+
+function populateCountrySelector() {
+  if (!elements.countrySelect) return;
+  const countries = countryCodes
+    .map((code) => ({
+      code,
+      name: countryName(code),
+      language: languageForCountry(code)
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  elements.countrySelect.innerHTML = countries
+    .map((item) => `<option value="${item.code}">${item.name} - ${languageName(item.language)}</option>`)
+    .join("");
+}
+
+function loadGoogleTranslate() {
+  if (window.google?.translate?.TranslateElement) {
+    googleTranslateReady = true;
+    applyGoogleTranslation(state.language);
+    return;
+  }
+  if (window.shipoverseasTranslateLoading) return;
+  window.shipoverseasTranslateLoading = true;
+  window.googleTranslateElementInit = () => {
+    new window.google.translate.TranslateElement(
+      {
+        pageLanguage: DEFAULT_LANGUAGE,
+        autoDisplay: false
+      },
+      "googleTranslateElement"
+    );
+    googleTranslateReady = true;
+    applyGoogleTranslation(state.language);
+  };
+  const script = document.createElement("script");
+  script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+  script.async = true;
+  script.onerror = () => {
+    window.shipoverseasTranslateLoading = false;
+    toast("Translation service is not available right now.");
+  };
+  document.head.append(script);
+}
+
+function initCountrySelector() {
+  populateCountrySelector();
+  setCountry(localStorage.getItem(COUNTRY_KEY) || detectCountryCode());
+  loadGoogleTranslate();
 }
 
 if ("scrollRestoration" in window.history) {
@@ -1174,6 +1324,7 @@ function renderAll() {
   renderFeatureDetail();
   renderToolDetail();
   renderNavigationState();
+  scheduleTranslationRefresh();
 }
 
 function selectShipment(shipment) {
@@ -1858,6 +2009,9 @@ function bindEvents() {
     document.body.classList.toggle("dark");
     localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light");
   });
+  elements.countrySelect?.addEventListener("change", (event) => {
+    setCountry(event.target.value, { persist: true, translate: true });
+  });
   document.addEventListener("click", (event) => {
     const link = event.target.closest?.('a[href^="#"]');
     if (!link) return;
@@ -1884,6 +2038,7 @@ async function boot() {
   if (window.location.hash === "#quote") {
     window.history.replaceState({}, "", "#home");
   }
+  initCountrySelector();
   state.usingFirebase = await firebaseClient.init();
   configureFirebaseUi();
   bindEvents();

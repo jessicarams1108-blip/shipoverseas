@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20260819-ship-map-marker" />
+    <link rel="stylesheet" href="./styles.css?v=20260819-country-selector" />
   </head>
   <body>
     <header class="topbar">
@@ -34,6 +34,11 @@
         <a class="admin-only hidden" href="#backend" data-admin-only>Ops</a>
       </nav>
       <div class="top-actions">
+        <label class="country-selector notranslate" for="countrySelect">
+          <span>Country</span>
+          <select id="countrySelect" aria-label="Choose country and language"></select>
+          <small id="countryLanguageLabel">English</small>
+        </label>
         <button class="icon-button" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.36-6.36-1.42 1.42M7.06 16.94l-1.42 1.42m12.72 0-1.42-1.42M7.06 7.06 5.64 5.64" />
@@ -44,6 +49,7 @@
         <div class="profile-menu hidden" id="profileMenu" aria-label="Profile menu"></div>
       </div>
     </header>
+    <div class="translate-host notranslate" id="googleTranslateElement" aria-hidden="true"></div>
 
     <main class="shell">
       <section id="home" class="hero-band dashboard-surface" data-page="home" aria-label="ShipOverseas home">
@@ -854,6 +860,6 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20260819-ship-map-marker"></script>
+    <script type="module" src="./app.js?v=20260819-country-selector"></script>
   </body>
 </html>

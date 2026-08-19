@@ -179,6 +179,63 @@ button {
   gap: 0.65rem;
 }
 
+.country-selector {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.12rem;
+  min-width: 12.8rem;
+  max-width: 15.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(240, 244, 255, 0.48)),
+    var(--surface);
+  padding: 0.42rem 0.55rem;
+}
+
+body.dark .country-selector {
+  background:
+    linear-gradient(135deg, rgba(32, 42, 65, 0.82), rgba(23, 31, 49, 0.72)),
+    var(--surface);
+}
+
+.country-selector span,
+.country-selector small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.country-selector select {
+  min-height: 1.55rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 0;
+  font-size: 0.82rem;
+  font-weight: 900;
+  outline: 0;
+}
+
+.country-selector select:focus {
+  box-shadow: none;
+}
+
+.translate-host,
+.goog-te-banner-frame,
+.goog-te-balloon-frame,
+.skiptranslate iframe,
+#goog-gt-tt {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
 .auth-summary {
   display: flex;
   align-items: center;
@@ -1691,6 +1748,11 @@ tbody tr.active {
     max-width: 12.4rem;
   }
 
+  .country-selector {
+    min-width: 10.4rem;
+    max-width: 11.6rem;
+  }
+
   .hero-band,
   .workspace,
   .portal-grid,
@@ -1754,6 +1816,22 @@ tbody tr.active {
     align-items: center;
     flex-direction: row;
     gap: 0.4rem;
+  }
+
+  .country-selector {
+    min-width: min(8rem, 30vw);
+    max-width: min(8.8rem, 32vw);
+    padding: 0.34rem 0.44rem;
+  }
+
+  .country-selector span,
+  .country-selector small {
+    display: none;
+  }
+
+  .country-selector select {
+    min-height: 2rem;
+    font-size: 0.75rem;
   }
 
   .profile-button {
