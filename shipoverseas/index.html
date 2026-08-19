@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20260818-valid-tracking" />
+    <link rel="stylesheet" href="./styles.css?v=20260819-ship-map-marker" />
   </head>
   <body>
     <header class="topbar">
@@ -159,6 +159,15 @@
           </div>
           <div class="live-map">
             <iframe id="liveMapFrame" title="Live shipment map" loading="lazy" referrerpolicy="no-referrer"></iframe>
+            <div class="live-ship-marker hidden" id="liveShipMarker" aria-hidden="true">
+              <svg viewBox="0 0 48 48" focusable="false">
+                <path class="ship-marker-shadow" d="M24 44c4.7-5.2 11-13.5 11-22A11 11 0 0 0 13 22c0 8.5 6.3 16.8 11 22Z" />
+                <path class="ship-marker-pin" d="M24 42c4.2-4.8 10-12.4 10-20A10 10 0 0 0 14 22c0 7.6 5.8 15.2 10 20Z" />
+                <path class="ship-marker-cabin" d="M18.8 20.3h5.1v-4.1h4.9l2.8 4.1h2.1v3.2H18.8v-3.2Z" />
+                <path class="ship-marker-hull" d="M14.8 24.8h18.9l-2.8 5.1H19.1c-1.6 0-3-0.8-3.8-2.2l-1.5-2.9Z" />
+                <path class="ship-marker-wave" d="M17.3 31.8c2 1.1 3.9 1.1 5.9 0s3.9-1.1 5.9 0" />
+              </svg>
+            </div>
             <div class="live-map-badge">
               <strong>Live position</strong>
               <span id="liveMapStatus">Waiting for shipment data</span>
@@ -845,6 +854,6 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20260818-profile-admin-rule-removed"></script>
+    <script type="module" src="./app.js?v=20260819-ship-map-marker"></script>
   </body>
 </html>

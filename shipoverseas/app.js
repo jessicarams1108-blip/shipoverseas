@@ -1,4 +1,4 @@
-import { firebaseClient } from "./firebase-client.js?v=20260818-valid-tracking";
+import { firebaseClient } from "./firebase-client.js?v=20260819-ship-map-marker";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -207,6 +207,7 @@ const elements = {
   mapRouteTitle: document.querySelector("#mapRouteTitle"),
   riskChip: document.querySelector("#riskChip"),
   liveMapFrame: document.querySelector("#liveMapFrame"),
+  liveShipMarker: document.querySelector("#liveShipMarker"),
   liveMapStatus: document.querySelector("#liveMapStatus"),
   lastUpdated: document.querySelector("#lastUpdated"),
   timeline: document.querySelector("#timeline"),
@@ -454,15 +455,13 @@ function multilineHtml(value) {
 function makeMapEmbedUrl(shipment) {
   const current = currentGeoForShipment(shipment);
   if (!current) return "";
-  const markerLat = clamp(current.lat, -80, 84).toFixed(4);
-  const markerLon = clamp(current.lon, -179, 179).toFixed(4);
   const zoomRange = current.source === "coordinates" ? 0.045 : 0.12;
   const minLon = clamp(current.lon - zoomRange, -179, 179);
   const maxLon = clamp(current.lon + zoomRange, -179, 179);
   const minLat = clamp(current.lat - zoomRange, -80, 84);
   const maxLat = clamp(current.lat + zoomRange, -80, 84);
   const bbox = [minLon, minLat, maxLon, maxLat].map((value) => value.toFixed(4)).join("%2C");
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${markerLat}%2C${markerLon}`;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik`;
 }
 
 async function loadBootstrap() {
@@ -733,14 +732,17 @@ function renderMap() {
     elements.riskChip.textContent = "Waiting";
     elements.riskChip.className = "risk-chip";
     elements.liveMapFrame.removeAttribute("src");
+    elements.liveShipMarker?.classList.add("hidden");
     elements.liveMapStatus.textContent = "Log in or search a tracking number to view the live location pin";
     return;
   }
   const mapUrl = makeMapEmbedUrl(shipment);
   if (mapUrl && elements.liveMapFrame.src !== mapUrl) {
     elements.liveMapFrame.src = mapUrl;
+    elements.liveShipMarker?.classList.remove("hidden");
   } else if (!mapUrl) {
     elements.liveMapFrame.removeAttribute("src");
+    elements.liveShipMarker?.classList.add("hidden");
   }
   const coordinates = formatCoordinates(shipment);
   const updatedAt = formatDateTime(shipment.currentLocationUpdatedAt || shipment.lastUpdated);
