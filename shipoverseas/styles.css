@@ -969,40 +969,215 @@ body.dark .live-map {
   margin-top: 1rem;
 }
 
+.timeline-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.timeline-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 8%, transparent), transparent 34%),
+    radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--red) 10%, transparent), transparent 18rem);
+}
+
+.timeline-panel > * {
+  position: relative;
+}
+
+.timeline-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.timeline-overview div {
+  border: 1px solid color-mix(in srgb, var(--blue) 16%, var(--line));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  padding: 0.72rem 0.85rem;
+}
+
+.timeline-overview span {
+  display: block;
+  margin-bottom: 0.18rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.timeline-overview strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.timeline-progress-rail {
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 70%, var(--surface-soft));
+  margin-bottom: 1.1rem;
+}
+
+.timeline-progress-rail span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--red), var(--blue) 55%, var(--green));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--blue) 32%, transparent);
+  transition: width 360ms ease;
+}
+
 .timeline {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(9.8rem, 1fr));
+  gap: 0.85rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.timeline li {
-  min-height: 7rem;
+.timeline-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.72rem;
+  min-height: 8.2rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 0.85rem;
-  background: var(--surface-soft);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface-soft) 92%, transparent));
+  padding: 0.88rem;
+  box-shadow: 0 10px 24px rgba(23, 32, 51, 0.06);
 }
 
-.timeline li.done {
-  border-color: color-mix(in srgb, var(--blue) 45%, var(--line));
+.timeline-step::before {
+  content: "";
+  position: absolute;
+  inset: 0.75rem auto 0.75rem 0;
+  width: 0.24rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 82%, var(--surface-soft));
 }
 
-.timeline li.current {
+.timeline-step.done {
+  border-color: color-mix(in srgb, var(--green) 38%, var(--line));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--green) 8%, var(--surface)), color-mix(in srgb, var(--surface) 88%, transparent));
+}
+
+.timeline-step.done::before {
+  background: var(--green);
+}
+
+.timeline-step.current {
+  border-color: color-mix(in srgb, var(--red) 52%, var(--line));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--red) 8%, var(--surface)), color-mix(in srgb, var(--blue) 6%, var(--surface)));
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--red) 18%, transparent),
+    0 16px 28px rgba(23, 32, 51, 0.1);
+}
+
+.timeline-step.current::before {
+  background: linear-gradient(180deg, var(--red), var(--blue));
+}
+
+.timeline-step.current::after {
+  content: "";
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 35%, transparent);
+}
+
+.timeline-node {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.45rem;
+  height: 2.45rem;
+  border: 2px solid color-mix(in srgb, var(--blue) 28%, var(--line));
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.timeline-step.done .timeline-node {
+  border-color: var(--green);
+  background: var(--green);
+  color: #ffffff;
+}
+
+.timeline-step.current .timeline-node {
   border-color: var(--red);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--red) 28%, transparent);
+  background: var(--red);
+  color: #ffffff;
+  box-shadow: 0 0 0 0.45rem color-mix(in srgb, var(--red) 16%, transparent);
 }
 
-.timeline strong {
+.timeline-step small {
   display: block;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.2rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 950;
+  text-transform: uppercase;
 }
 
-.timeline span {
+.timeline-step strong {
+  display: block;
+  margin-bottom: 0.36rem;
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.timeline-step span:not(.timeline-node) {
+  display: block;
   color: var(--muted);
   font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.timeline-step em {
+  display: block;
+  margin-top: 0.55rem;
+  color: color-mix(in srgb, var(--muted) 88%, var(--ink));
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 850;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .timeline-step.current::after {
+    animation: timelinePulse 1.8s ease-out infinite;
+  }
+}
+
+@keyframes timelinePulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 35%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 0.55rem color-mix(in srgb, var(--red) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 0%, transparent);
+  }
 }
 
 .feature-grid,
@@ -1872,6 +2047,7 @@ tbody tr.active {
   .chat-form,
   .metric-grid,
   .detail-list,
+  .timeline-overview,
   .timeline,
   .feature-grid,
   .tools-grid,

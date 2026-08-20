@@ -1,5 +1,5 @@
 import { countryCodes, countryLanguage, languageLabelFallback } from "./country-language.js?v=20260819-country-selector";
-import { firebaseClient } from "./firebase-client.js?v=20260819-country-selector";
+import { firebaseClient } from "./firebase-client.js?v=20260819-lively-timeline";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -222,6 +222,9 @@ const elements = {
   liveShipMarker: document.querySelector("#liveShipMarker"),
   liveMapStatus: document.querySelector("#liveMapStatus"),
   lastUpdated: document.querySelector("#lastUpdated"),
+  timelineCurrent: document.querySelector("#timelineCurrent"),
+  timelineCompletion: document.querySelector("#timelineCompletion"),
+  timelineProgressRail: document.querySelector("#timelineProgressRail"),
   timeline: document.querySelector("#timeline"),
   loginForm: document.querySelector("#loginForm"),
   registerForm: document.querySelector("#registerForm"),
@@ -907,16 +910,47 @@ function renderTimeline() {
   const shipment = state.selectedShipment;
   if (!shipment) {
     elements.lastUpdated.textContent = "-";
-    elements.timeline.innerHTML = `<li class="current"><strong>No shipment selected</strong><span>Search or log in to load details</span></li>`;
+    elements.timelineCurrent.textContent = "Waiting for shipment";
+    elements.timelineCompletion.textContent = "0%";
+    elements.timelineProgressRail.style.width = "0%";
+    elements.timeline.innerHTML = `
+      <li class="timeline-step current">
+        <span class="timeline-node" aria-hidden="true">1</span>
+        <div>
+          <small>Ready</small>
+          <strong>No shipment selected</strong>
+          <span>Search or log in to load details</span>
+        </div>
+      </li>`;
     return;
   }
-  const currentIndex = Math.max(0, state.statusSteps.findIndex((step) => step.name === shipment.status));
-  elements.timeline.innerHTML = state.statusSteps
-    .slice(0, 6)
+  const steps = state.statusSteps.length ? state.statusSteps : [{ name: shipment.status, progress: shipmentProgress(shipment) }];
+  const currentIndex = Math.max(0, steps.findIndex((step) => step.name === shipment.status));
+  const progress = shipmentProgress(shipment);
+  elements.timelineCurrent.textContent = shipment.status;
+  elements.timelineCompletion.textContent = `${progress}%`;
+  elements.timelineProgressRail.style.width = `${progress}%`;
+  elements.timeline.innerHTML = steps
+    .map((step, index) => ({ ...step, number: index + 1 }))
     .map((step, index) => {
-      const stateName = index < currentIndex ? "done" : index === currentIndex ? "current" : "";
-      const note = index < currentIndex ? "Complete" : index === currentIndex ? "Current" : "Pending";
-      return `<li class="${stateName}"><strong>${escapeHtml(step.name)}</strong><span>${note}</span></li>`;
+      const stateName = index < currentIndex ? "done" : index === currentIndex ? "current" : "pending";
+      const note = index < currentIndex ? "Completed" : index === currentIndex ? currentLocationName(shipment) : "Upcoming";
+      const timestamp =
+        index === currentIndex
+          ? `Updated ${formatDateTime(shipment.currentLocationUpdatedAt || shipment.lastUpdated)}`
+          : index < currentIndex
+            ? "Milestone cleared"
+            : "Awaiting update";
+      return `
+        <li class="timeline-step ${stateName}">
+          <span class="timeline-node" aria-hidden="true">${escapeHtml(step.number)}</span>
+          <div>
+            <small>Step ${step.number}</small>
+            <strong>${escapeHtml(step.name)}</strong>
+            <span>${escapeHtml(note)}</span>
+            <em>${escapeHtml(timestamp)}</em>
+          </div>
+        </li>`;
     })
     .join("");
 }

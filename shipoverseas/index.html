@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20260819-country-selector" />
+    <link rel="stylesheet" href="./styles.css?v=20260819-lively-timeline" />
   </head>
   <body>
     <header class="topbar">
@@ -190,6 +190,17 @@
           </div>
           <span id="lastUpdated">-</span>
         </div>
+        <div class="timeline-overview" aria-label="Shipment timeline summary">
+          <div>
+            <span>Current milestone</span>
+            <strong id="timelineCurrent">Waiting for shipment</strong>
+          </div>
+          <div>
+            <span>Journey completion</span>
+            <strong id="timelineCompletion">0%</strong>
+          </div>
+        </div>
+        <div class="timeline-progress-rail" aria-hidden="true"><span id="timelineProgressRail"></span></div>
         <ol class="timeline" id="timeline"></ol>
       </section>
 
@@ -860,6 +871,6 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20260819-country-selector"></script>
+    <script type="module" src="./app.js?v=20260819-lively-timeline"></script>
   </body>
 </html>
