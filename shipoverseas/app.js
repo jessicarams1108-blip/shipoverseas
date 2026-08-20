@@ -1,5 +1,5 @@
 import { countryCodes, countryLanguage, languageLabelFallback } from "./country-language.js?v=20260819-country-selector";
-import { firebaseClient } from "./firebase-client.js?v=20260819-lively-timeline";
+import { firebaseClient } from "./firebase-client.js?v=20260820-render-backend";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -164,6 +164,8 @@ const state = {
   selectedShipment: null,
   country: "",
   language: DEFAULT_LANGUAGE,
+  renderRuntime: null,
+  usingRenderBackend: false,
   usingFirebase: false
 };
 
@@ -273,12 +275,12 @@ function useFirebase() {
 }
 
 function canUseLocalApi() {
-  return ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
+  return state.usingRenderBackend || ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
 }
 
 function requireAvailableBackend() {
   if (useFirebase() || canUseLocalApi()) return;
-  throw new Error("Firebase is not connected on this live domain. Add shipoversea.site and www.shipoversea.site in Firebase Authentication authorized domains, then refresh.");
+  throw new Error("No backend is connected on this live domain. Use the Render app URL or refresh after deployment finishes.");
 }
 
 function configureFirebaseUi() {
@@ -456,6 +458,21 @@ async function apiFetch(path, options = {}) {
     throw new Error(payload.error || "Request failed.");
   }
   return payload;
+}
+
+async function detectRenderBackend() {
+  try {
+    const response = await fetch("/api/runtime", {
+      cache: "no-store",
+      headers: { accept: "application/json" }
+    });
+    const contentType = response.headers.get("content-type") || "";
+    if (!response.ok || !contentType.includes("application/json")) return null;
+    const runtime = await response.json();
+    return runtime?.backend === "render" ? runtime : null;
+  } catch {
+    return null;
+  }
 }
 
 function isAdmin() {
@@ -1457,7 +1474,7 @@ async function login(event) {
     setAuthMessage(error.message);
     if (useFirebase() && /password|credential|authorized|sign-in/i.test(error.message)) {
       elements.resetForm.elements.email.value = email;
-      elements.resetMessage.textContent = "Use Reset Password to send a Firebase reset email, then log in with the new password.";
+      elements.resetMessage.textContent = "Use Reset Password to send a reset email, then log in with the new password.";
       switchAuthTab("reset");
     }
     toast(error.message);
@@ -1958,14 +1975,16 @@ function fillAdminLogin() {
   switchAuthTab("login");
   elements.loginForm.elements.email.value = ADMIN_EMAIL;
   elements.loginForm.elements.password.value = "";
-  setAuthMessage("Admin email ready. Enter the Firebase password for this account.");
+  setAuthMessage(useFirebase() ? "Admin email ready. Enter the Firebase password for this account." : "Admin email ready. Enter the Render admin password for this account.");
   elements.loginForm.elements.password.focus();
 }
 
 function fillAdminReset() {
   switchAuthTab("reset");
   elements.resetForm.elements.email.value = ADMIN_EMAIL;
-  elements.resetMessage.textContent = "Send the reset email, set a new Firebase password, then return to Login.";
+  elements.resetMessage.textContent = useFirebase()
+    ? "Send the reset email, set a new Firebase password, then return to Login."
+    : "Send the reset code, set a new Render password, then return to Login.";
 }
 
 function goBack() {
@@ -2073,7 +2092,9 @@ async function boot() {
     window.history.replaceState({}, "", "#home");
   }
   initCountrySelector();
-  state.usingFirebase = await firebaseClient.init();
+  state.renderRuntime = await detectRenderBackend();
+  state.usingRenderBackend = Boolean(state.renderRuntime);
+  state.usingFirebase = state.usingRenderBackend ? false : await firebaseClient.init();
   configureFirebaseUi();
   bindEvents();
   await refreshAll();

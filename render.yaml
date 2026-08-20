@@ -11,3 +11,7 @@ services:
         value: production
       - key: HOST
         value: 0.0.0.0
+      - key: EMAIL_FROM
+        value: ShipOverseas <updates@shipoversea.site>
+      - key: EMAIL_REPLY_TO
+        value: hardewusi@gmail.com

@@ -14,6 +14,7 @@ const host = process.env.HOST || (process.env.RENDER ? "0.0.0.0" : "127.0.0.1");
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const ADMIN_EMAIL_LOWER = ADMIN_EMAIL.toLowerCase();
 const EMAIL_FROM = process.env.EMAIL_FROM || "ShipOverseas <updates@shipoverseas.local>";
+const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || "hardewusi@gmail.com";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 
 const statusSteps = [
@@ -123,7 +124,8 @@ async function deliverEmail(message, force = false) {
         from: EMAIL_FROM,
         to: [message.to],
         subject: message.subject,
-        text: message.body
+        text: message.body,
+        reply_to: EMAIL_REPLY_TO
       })
     });
     if (!response.ok) {
@@ -570,6 +572,16 @@ async function handleApi(request, response, parsed) {
   const parts = parsed.pathname.split("/").filter(Boolean);
 
   try {
+    if (method === "GET" && parsed.pathname === "/api/runtime") {
+      sendJson(response, 200, {
+        backend: "render",
+        emailDelivery: RESEND_API_KEY ? "resend" : "simulated",
+        emailFrom: EMAIL_FROM,
+        emailReplyTo: EMAIL_REPLY_TO
+      });
+      return;
+    }
+
     if (method === "GET" && parsed.pathname === "/api/bootstrap") {
       sendJson(response, 200, {
         statusSteps,
