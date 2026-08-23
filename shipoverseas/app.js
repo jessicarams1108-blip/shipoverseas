@@ -1,5 +1,5 @@
 import { countryCodes, countryLanguage, languageLabelFallback } from "./country-language.js?v=20260819-country-selector";
-import { firebaseClient } from "./firebase-client.js?v=20260820-render-backend";
+import { firebaseClient } from "./firebase-client.js?v=20260823-lookup-route";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -438,9 +438,24 @@ if ("scrollRestoration" in window.history) {
 }
 
 function resetPageScroll() {
+  if (window.location.hash === "#shipment-lookup") {
+    focusShipmentLookup();
+    return;
+  }
   window.scrollTo({ top: 0, left: 0 });
   requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0 }));
   window.setTimeout(() => window.scrollTo({ top: 0, left: 0 }), 140);
+}
+
+function focusShipmentLookup() {
+  const lookup = document.querySelector("#shipment-lookup");
+  if (!lookup) return;
+  const scrollToLookup = () => {
+    lookup.scrollIntoView({ block: "start", behavior: "smooth" });
+    elements.heroTrackingInput?.focus({ preventScroll: true });
+  };
+  requestAnimationFrame(scrollToLookup);
+  window.setTimeout(scrollToLookup, 140);
 }
 
 async function apiFetch(path, options = {}) {
@@ -1184,6 +1199,7 @@ function getActivePage() {
   const hash = window.location.hash || "#home";
   if (hash.startsWith("#feature-")) return "feature";
   if (hash.startsWith("#tool-")) return "tool";
+  if (hash === "#shipment-lookup") return "home";
   if (hash.startsWith("#tracking-") || hash === "#tracking") return "tracking";
   if (hash === "#features") return "features";
   if (hash === "#tools") return "tools";
@@ -1214,7 +1230,7 @@ function renderNavigationState() {
   const navPage = activePage === "feature" ? "features" : activePage === "tool" ? "tools" : activePage;
   elements.navLinks.forEach((link) => {
     const linkPage = getPageFromLink(link.getAttribute("href"));
-    link.classList.toggle("active", linkPage === navPage);
+    link.classList.toggle("active", linkPage === (hash === "#shipment-lookup" ? "tracking" : navPage));
   });
 
   if (state.activePage !== activePage) {
@@ -1228,6 +1244,7 @@ function renderNavigationState() {
 
 function getPageFromLink(href) {
   if (!href) return "";
+  if (href === "#shipment-lookup") return "tracking";
   if (href === "#tracking") return "tracking";
   if (href === "#features") return "features";
   if (href === "#tools") return "tools";
@@ -2002,6 +2019,7 @@ function handleHashChange() {
   renderFeatureDetail();
   renderToolDetail();
   renderNavigationState();
+  if (window.location.hash === "#shipment-lookup") focusShipmentLookup();
 }
 
 function navigateToHash(hash) {

@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20260819-lively-timeline" />
+    <link rel="stylesheet" href="./styles.css?v=20260823-lookup-route" />
   </head>
   <body>
     <header class="topbar">
@@ -29,7 +29,7 @@
         <a href="#home">Home</a>
         <a href="#features">Services</a>
         <a href="#tools">Tools</a>
-        <a href="#tracking">Track Shipment</a>
+        <a href="#shipment-lookup">Track Shipment</a>
         <a href="#portal">Portal</a>
         <a class="admin-only hidden" href="#backend" data-admin-only>Ops</a>
       </nav>
@@ -60,7 +60,7 @@
             Reliable international cargo shipping support with transparent tracking from pickup to final delivery.
           </p>
           <div class="hero-actions">
-            <a class="primary-link" href="#tracking">
+            <a class="primary-link" href="#shipment-lookup">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="m21 21-4.35-4.35" />
                 <circle cx="11" cy="11" r="7" />
@@ -90,7 +90,7 @@
         </div>
       </section>
 
-      <section class="tracking-strip dashboard-surface" data-page="home" aria-label="Quick shipment tracking">
+      <section id="shipment-lookup" class="tracking-strip dashboard-surface" data-page="home" aria-label="Quick shipment tracking">
         <form class="tracking-card" id="heroTrackingForm">
           <span class="card-tag">Shipment lookup</span>
           <label for="heroTrackingInput">Tracking ID or Bill of Lading</label>
@@ -849,7 +849,7 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
           <a href="#tool-ship-schedules">Shipping Lines Directory</a>
           <a href="#features">Maritime</a>
           <a href="#tool-freight-index">Market Notes</a>
-          <a href="#tracking">Track Cargo</a>
+          <a href="#shipment-lookup">Track Cargo</a>
         </div>
         <div>
           <h3>Company</h3>
@@ -871,6 +871,6 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20260820-render-backend"></script>
+    <script type="module" src="./app.js?v=20260823-lookup-route"></script>
   </body>
 </html>
