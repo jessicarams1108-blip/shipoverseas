@@ -1232,7 +1232,7 @@ function renderNavigationState() {
   const navPage = activePage === "feature" ? "features" : activePage === "tool" ? "tools" : activePage;
   elements.navLinks.forEach((link) => {
     const linkPage = getPageFromLink(link.getAttribute("href"));
-    link.classList.toggle("active", linkPage === (hash === "#shipment-lookup" ? "tracking" : navPage));
+    link.classList.toggle("active", linkPage === navPage);
   });
 
   if (state.activePage !== activePage) {
@@ -1246,7 +1246,7 @@ function renderNavigationState() {
 
 function getPageFromLink(href) {
   if (!href) return "";
-  if (href === "#shipment-lookup") return "tracking";
+  if (href === "#shipment-lookup") return "home";
   if (href === "#tracking") return "tracking";
   if (href === "#features") return "features";
   if (href === "#tools") return "tools";
