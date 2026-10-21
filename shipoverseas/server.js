@@ -704,6 +704,10 @@ async function handleApi(request, response, parsed) {
     if (method === "POST" && parsed.pathname === "/api/password-reset/request") {
       const body = await parseBody(request);
       const emailLower = String(body.email || "").trim().toLowerCase();
+      if (process.env.RENDER && !RESEND_API_KEY) {
+        sendError(response, 503, "Password reset email is not configured on the live site yet. Contact ShipOverseas support or the administrator.");
+        return;
+      }
       const user = db.users.find((item) => item.emailLower === emailLower);
       let localCode = "";
       if (user) {
@@ -718,20 +722,25 @@ async function handleApi(request, response, parsed) {
           used: false,
           createdAt: new Date().toISOString()
         });
-        await createSystemEmail(
+        const delivery = await createSystemEmail(
           db,
           user.emailLower,
           "ShipOverseas password reset code",
           `Use reset code ${localCode} to set a new ShipOverseas password. This code expires in 15 minutes.`
         );
+        if (process.env.RENDER && delivery.status !== "sent") {
+          sendError(response, 503, "We couldn't send the reset email. Please try again later or contact ShipOverseas support.");
+          return;
+        }
         audit(db, user, "auth.password_reset_requested", { userEmail: user.emailLower });
         writeDb(db);
       }
-      sendJson(response, 200, {
+      const payload = {
         ok: true,
-        message: "If the account exists, a reset code has been sent.",
-        localCode
-      });
+        message: "If the account exists, a reset code has been sent to its email address. Check your inbox and spam folder."
+      };
+      if (!process.env.RENDER) payload.localCode = localCode;
+      sendJson(response, 200, payload);
       return;
     }
 
