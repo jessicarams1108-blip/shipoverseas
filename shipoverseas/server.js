@@ -585,7 +585,7 @@ async function handleApi(request, response, parsed) {
     if (method === "GET" && parsed.pathname === "/api/bootstrap") {
       sendJson(response, 200, {
         statusSteps,
-        shipments: db.shipments.map(publicShipment)
+        shipments: []
       });
       return;
     }

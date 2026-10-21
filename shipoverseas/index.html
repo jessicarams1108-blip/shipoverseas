@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20260823-lookup-route" />
+    <link rel="stylesheet" href="./styles.css?v=20261021-compact-country" />
   </head>
   <body>
     <header class="topbar">
@@ -35,9 +35,7 @@
       </nav>
       <div class="top-actions">
         <label class="country-selector notranslate" for="countrySelect">
-          <span>Country</span>
           <select id="countrySelect" aria-label="Choose country and language"></select>
-          <small id="countryLanguageLabel">English</small>
         </label>
         <button class="icon-button" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle theme">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -201,7 +199,9 @@
           </div>
         </div>
         <div class="timeline-progress-rail" aria-hidden="true"><span id="timelineProgressRail"></span></div>
-        <ol class="timeline" id="timeline"></ol>
+        <div class="timeline-scroll" tabindex="0" aria-label="Shipment milestones. Scroll horizontally to view all steps.">
+          <ol class="timeline" id="timeline"></ol>
+        </div>
       </section>
 
       <section id="features" class="feature-panel dashboard-surface" data-page="features" aria-label="Feature set">
@@ -301,7 +301,6 @@
             <h2>Access your cargo workspace</h2>
             <p>Sign in to track shipments, review email updates, and chat with support from one protected account.</p>
             <div class="auth-badges" aria-label="Portal security features">
-              <span>Firebase secured</span>
               <span>Shipment history</span>
               <span>Support chat</span>
             </div>
@@ -871,6 +870,6 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20260823-lookup-route"></script>
+    <script type="module" src="./app.js?v=20261021-private-tracking-shortcuts"></script>
   </body>
 </html>

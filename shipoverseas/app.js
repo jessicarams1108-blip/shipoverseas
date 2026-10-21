@@ -654,11 +654,7 @@ async function loadBootstrap() {
     try {
       const data = await firebaseClient.getBootstrap();
       state.statusSteps = data.statusSteps || [];
-      state.shipments = data.shipments || [];
       state.dataWarning = data.dataWarning || "";
-      if (!state.selectedShipment) {
-        state.selectedShipment = state.shipments[0] || null;
-      }
       return;
     } catch (error) {
       console.warn("Firebase bootstrap failed, using local API fallback.", error);
@@ -666,10 +662,6 @@ async function loadBootstrap() {
   }
   const data = await apiFetch("/api/bootstrap");
   state.statusSteps = data.statusSteps || [];
-  state.shipments = data.shipments || [];
-  if (!state.selectedShipment) {
-    state.selectedShipment = state.shipments[0] || null;
-  }
 }
 
 async function loadMe() {
@@ -705,12 +697,14 @@ async function loadMe() {
 
 async function loadPrivateData() {
   if (!state.user) {
+    state.shipments = [];
     state.myShipments = [];
     state.emails = [];
     state.supportConversations = [];
     state.supportMessages = [];
     state.auditLogs = [];
     state.dataWarning = "";
+    state.selectedShipment = null;
     state.selectedSupportConversationId = "";
     return;
   }
@@ -843,6 +837,7 @@ function renderMetrics() {
 
 function renderQuickList() {
   elements.quickList.innerHTML = "";
+  if (!state.user) return;
   visibleShipments().slice(0, 4).forEach((shipment) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -855,6 +850,7 @@ function renderQuickList() {
 function renderDetails() {
   const shipment = state.selectedShipment;
   if (!shipment) {
+    elements.heroTrackingInput.value = "";
     elements.detailTrackingId.textContent = "No shipment selected";
     elements.detailStatus.textContent = "-";
     elements.detailRoute.textContent = "Enter a tracking number or log in to view assigned shipments.";
@@ -947,37 +943,43 @@ function renderTimeline() {
     elements.timelineProgressRail.style.width = "0%";
     elements.timeline.innerHTML = `
       <li class="timeline-step current">
-        <span class="timeline-node" aria-hidden="true">1</span>
+        <span class="timeline-node" aria-hidden="true">—</span>
         <div>
-          <small>Ready</small>
+          <small>Start tracking</small>
           <strong>No shipment selected</strong>
-          <span>Search or log in to load details</span>
+          <span>Search for a tracking number to see its journey.</span>
         </div>
       </li>`;
     return;
   }
   const steps = state.statusSteps.length ? state.statusSteps : [{ name: shipment.status, progress: shipmentProgress(shipment) }];
-  const currentIndex = Math.max(0, steps.findIndex((step) => step.name === shipment.status));
   const progress = shipmentProgress(shipment);
+  const exactIndex = steps.findIndex((step) => step.name === shipment.status);
+  const currentIndex = exactIndex >= 0
+    ? exactIndex
+    : Math.max(0, steps.reduce((lastReached, step, index) => Number(step.progress) <= progress ? index : lastReached, 0));
+  const isDelivered = String(shipment.status).toLowerCase() === "delivered";
   elements.timelineCurrent.textContent = shipment.status;
   elements.timelineCompletion.textContent = `${progress}%`;
   elements.timelineProgressRail.style.width = `${progress}%`;
   elements.timeline.innerHTML = steps
     .map((step, index) => ({ ...step, number: index + 1 }))
     .map((step, index) => {
-      const stateName = index < currentIndex ? "done" : index === currentIndex ? "current" : "pending";
-      const note = index < currentIndex ? "Completed" : index === currentIndex ? currentLocationName(shipment) : "Upcoming";
+      const isComplete = index < currentIndex || isDelivered;
+      const isCurrent = index === currentIndex && !isDelivered;
+      const stateName = isComplete ? "done" : isCurrent ? "current" : "pending";
+      const note = isComplete ? "Milestone complete" : isCurrent ? currentLocationName(shipment) : "Next milestone";
       const timestamp =
-        index === currentIndex
+        isCurrent
           ? `Updated ${formatDateTime(shipment.currentLocationUpdatedAt || shipment.lastUpdated)}`
-          : index < currentIndex
-            ? "Milestone cleared"
-            : "Awaiting update";
+          : isComplete
+            ? "Completed"
+            : "We’ll show an update here";
       return `
         <li class="timeline-step ${stateName}">
-          <span class="timeline-node" aria-hidden="true">${escapeHtml(step.number)}</span>
+          <span class="timeline-node" aria-hidden="true">${isComplete ? "✓" : escapeHtml(step.number)}</span>
           <div>
-            <small>Step ${step.number}</small>
+            <small>${isComplete ? "Complete" : isCurrent ? "In progress" : `Step ${step.number}`}</small>
             <strong>${escapeHtml(step.name)}</strong>
             <span>${escapeHtml(note)}</span>
             <em>${escapeHtml(timestamp)}</em>
