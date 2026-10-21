@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20261021-compact-country" />
+    <link rel="stylesheet" href="./styles.css?v=20261021-home-login-layout" />
   </head>
   <body>
     <header class="topbar">
@@ -30,7 +30,7 @@
         <a href="#features">Services</a>
         <a href="#tools">Tools</a>
         <a href="#shipment-lookup">Track Shipment</a>
-        <a href="#portal">Portal</a>
+        <a href="#portal">Login</a>
         <a class="admin-only hidden" href="#backend" data-admin-only>Ops</a>
       </nav>
       <div class="top-actions">
@@ -86,25 +86,24 @@
             <small>Container, route, status, ETA, and support updates in one customer portal.</small>
           </div>
         </div>
-      </section>
-
-      <section id="shipment-lookup" class="tracking-strip dashboard-surface" data-page="home" aria-label="Quick shipment tracking">
-        <form class="tracking-card" id="heroTrackingForm">
-          <span class="card-tag">Shipment lookup</span>
-          <label for="heroTrackingInput">Tracking ID or Bill of Lading</label>
-          <div class="tracking-row">
-            <input id="heroTrackingInput" autocomplete="off" placeholder="Enter tracking number" />
-            <button class="primary-button" type="submit">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m21 21-4.35-4.35" />
-                <circle cx="11" cy="11" r="7" />
-              </svg>
-              Track
-            </button>
-          </div>
-          <p class="form-note" id="trackingMessage" role="status"></p>
-          <div class="quick-list" id="quickList" aria-label="Saved shipment shortcuts"></div>
-        </form>
+        <section id="shipment-lookup" class="tracking-strip dashboard-surface" data-page="home" aria-label="Quick shipment tracking">
+          <form class="tracking-card" id="heroTrackingForm">
+            <span class="card-tag">Shipment lookup</span>
+            <label for="heroTrackingInput">Tracking ID or Bill of Lading</label>
+            <div class="tracking-row">
+              <input id="heroTrackingInput" autocomplete="off" placeholder="Enter tracking number" />
+              <button class="primary-button" type="submit">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m21 21-4.35-4.35" />
+                  <circle cx="11" cy="11" r="7" />
+                </svg>
+                Track
+              </button>
+            </div>
+            <p class="form-note" id="trackingMessage" role="status"></p>
+            <div class="quick-list" id="quickList" aria-label="Saved shipment shortcuts"></div>
+          </form>
+        </section>
       </section>
 
       <section class="journey-panel dashboard-surface" data-page="home" aria-label="Customer shipping journey">
@@ -870,6 +869,6 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20261021-private-tracking-shortcuts"></script>
+    <script type="module" src="./app.js?v=20261021-home-login-layout"></script>
   </body>
 </html>

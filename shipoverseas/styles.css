@@ -2294,7 +2294,9 @@ body {
 }
 
 .tracking-strip {
+  grid-column: 1 / -1;
   scroll-margin-top: 6rem;
+  margin: 0 1rem 1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
