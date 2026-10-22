@@ -281,12 +281,10 @@ body {
   justify-content: center;
   flex: 0 0 auto;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.28), transparent 28%),
-    linear-gradient(135deg, #0b1f3d 0%, #243fd3 64%, #e23237 100%);
+  background: var(--blue);
   color: #ffffff;
   font-weight: 950;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24), 0 10px 22px rgba(11, 31, 61, 0.18);
+  box-shadow: none;
 }
 
 .profile-avatar {

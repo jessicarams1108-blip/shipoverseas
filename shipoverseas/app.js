@@ -500,13 +500,8 @@ function visibleShipments() {
 }
 
 function getInitials(user) {
-  if (!user) return "SO";
-  const source = user.name || user.email || "ShipOverseas";
-  const parts = source.replace(/@.*/, "").split(/[\s._-]+/).filter(Boolean);
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "SO";
+  const firstEmailLetter = String(user?.email || "").trim().charAt(0);
+  return firstEmailLetter.toUpperCase() || "S";
 }
 
 function getProgress(status) {
