@@ -1,5 +1,5 @@
 import { countryCodes, countryLanguage, languageLabelFallback } from "./country-language.js?v=20260819-country-selector";
-import { firebaseClient } from "./firebase-client.js?v=20261022-customer-copy";
+import { firebaseClient } from "./firebase-client.js?v=20261022-multi-container";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -247,6 +247,8 @@ const elements = {
   adminLock: document.querySelector("#adminLock"),
   backendContent: document.querySelector("#backendContent"),
   shipmentForm: document.querySelector("#shipmentForm"),
+  shipmentContainerList: document.querySelector("#shipmentContainerList"),
+  addShipmentContainer: document.querySelector("#addShipmentContainer"),
   statusSelect: document.querySelector("#statusSelect"),
   adminShipmentSelect: document.querySelector("#adminShipmentSelect"),
   updateForm: document.querySelector("#updateForm"),
@@ -583,6 +585,54 @@ function shipmentProgress(shipment) {
   return explicit === null ? getProgress(shipment?.status) : clamp(explicit, 0, 100);
 }
 
+function getShipmentContainers(shipment) {
+  const containers = Array.isArray(shipment?.containers)
+    ? shipment.containers.filter((item) => item?.container || item?.cargo)
+    : [];
+  return containers.length ? containers : [shipment].filter(Boolean);
+}
+
+function updateContainerAddButton() {
+  if (!elements.addShipmentContainer || !elements.shipmentContainerList) return;
+  const count = elements.shipmentContainerList.querySelectorAll("[data-container-card]").length;
+  elements.addShipmentContainer.disabled = count >= 3;
+  elements.addShipmentContainer.textContent = count >= 3 ? "Maximum 3 containers" : "+ Add container";
+}
+
+function addShipmentContainer() {
+  const cards = elements.shipmentContainerList?.querySelectorAll("[data-container-card]");
+  if (!cards?.length || cards.length >= 3) return;
+  const index = cards.length + 1;
+  const card = cards[0].cloneNode(true);
+  card.querySelector("legend").textContent = `Container ${index} · Package details`;
+  card.querySelectorAll("[data-package-field]").forEach((control) => {
+    control.name = `${control.dataset.packageField}__container${index}`;
+    if (control.tagName === "SELECT") control.selectedIndex = 0;
+    else control.value = "";
+  });
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.className = "secondary-button remove-container-button";
+  removeButton.textContent = `Remove container ${index}`;
+  removeButton.addEventListener("click", () => {
+    card.remove();
+    [...elements.shipmentContainerList.querySelectorAll("[data-container-card]")].forEach((item, cardIndex) => {
+      const nextIndex = cardIndex + 1;
+      item.querySelector("legend").textContent = `Container ${nextIndex} · Package details`;
+      item.querySelectorAll("[data-package-field]").forEach((control) => {
+        const field = control.dataset.packageField;
+        control.name = nextIndex === 1 ? field : `${field}__container${nextIndex}`;
+      });
+      const removeButton = item.querySelector(".remove-container-button");
+      if (removeButton) removeButton.textContent = `Remove container ${nextIndex}`;
+    });
+    updateContainerAddButton();
+  });
+  card.insertBefore(removeButton, card.querySelector(".shipment-container-fields"));
+  elements.shipmentContainerList.append(card);
+  updateContainerAddButton();
+}
+
 function formatNumber(value, suffix = "") {
   const number = numberOrNull(value);
   if (number === null) return "-";
@@ -869,15 +919,17 @@ function renderDetails() {
   elements.lastUpdated.textContent = `Updated ${formatDateTime(shipment.lastUpdated)}`;
   elements.heroTrackingInput.value = shipment.trackingId;
 
+  const containers = getShipmentContainers(shipment);
+  const isMultiContainer = containers.length > 1;
   const rows = [
     ["Current Location", currentLocationName(shipment), "detail-current"],
     ["Coordinates", formatCoordinates(shipment)],
     ["Location Updated", formatDateTime(shipment.currentLocationUpdatedAt || shipment.lastUpdated)],
     ["Bill of Lading", shipment.billOfLading],
-    ["Container", shipment.container],
+    ["Container", isMultiContainer ? `${containers.length} containers` : shipment.container],
     ["Receiver", shipment.receiverName],
     ["Vessel", shipment.vessel],
-    ["Cargo", shipment.cargo],
+    ["Cargo", isMultiContainer ? `${containers.length} packages` : shipment.cargo],
     ["Cargo Type", shipment.cargoType],
     ["Condition", shipment.cargoCondition],
     ["Quantity", shipment.cargoQuantity],
@@ -896,9 +948,23 @@ function renderDetails() {
   if (shipment.cargoNotes) {
     rows.push(["Cargo Notes", shipment.cargoNotes, "detail-wide detail-manifest"]);
   }
-  elements.detailList.innerHTML = rows
+  const packageFields = new Set(["Container", "Cargo", "Cargo Type", "Condition", "Quantity", "Dimensions", "Volume", "Weight", "Reference / VIN", "Cargo Manifest", "Cargo Notes"]);
+  const visibleRows = isMultiContainer ? rows.filter(([label]) => !packageFields.has(label)) : rows;
+  const packageBreakdown = isMultiContainer
+    ? `<div class="detail-wide container-package-breakdown"><dt>Containers &amp; packages</dt><dd>${containers.map((item, index) => `
+        <section class="container-package-summary">
+          <strong>Container ${index + 1}: ${escapeHtml(item.container || "-")}</strong>
+          <p><b>Package:</b> ${escapeHtml(item.cargo || "-")}${item.cargoType ? ` · ${escapeHtml(item.cargoType)}` : ""}</p>
+          <small>Condition: ${escapeHtml(item.cargoCondition || "-")} · Quantity: ${escapeHtml(item.cargoQuantity || 1)} · Weight: ${formatNumber(item.cargoWeightLbs, " lbs")}</small>
+          <small>Dimensions: ${formatNumber(item.cargoLengthIn, '"')} × ${formatNumber(item.cargoWidthIn, '"')} × ${formatNumber(item.cargoHeightIn, '"')} · Volume: ${formatNumber(item.cargoVolumeCuFt, " cu. ft.")}</small>
+          ${item.cargoReference ? `<small>Reference: ${escapeHtml(item.cargoReference)}</small>` : ""}
+          ${item.cargoManifest ? `<p>${multilineHtml(item.cargoManifest)}</p>` : ""}
+          ${item.cargoNotes ? `<p>${multilineHtml(item.cargoNotes)}</p>` : ""}
+        </section>`).join("")}</dd></div>`
+    : "";
+  elements.detailList.innerHTML = visibleRows
     .map(([label, value, className]) => `<div class="${escapeHtml(className || "")}"><dt>${escapeHtml(label)}</dt><dd>${className?.includes("detail-manifest") ? multilineHtml(value || "-") : escapeHtml(value || "-")}</dd></div>`)
-    .join("");
+    .join("") + packageBreakdown;
 }
 
 function renderMap() {
@@ -987,7 +1053,7 @@ function renderTimeline() {
 function renderFleet() {
   const filter = elements.fleetFilter.value.trim().toLowerCase();
   const visible = visibleShipments().filter((shipment) =>
-    [shipment.trackingId, shipment.billOfLading, shipment.receiverName, shipment.origin, shipment.destination, shipment.status]
+    [shipment.trackingId, shipment.billOfLading, shipment.receiverName, shipment.origin, shipment.destination, shipment.status, ...getShipmentContainers(shipment).map((item) => item.container)]
       .join(" ")
       .toLowerCase()
       .includes(filter)
@@ -1031,16 +1097,17 @@ function renderCustomerPortal() {
       : shipments.length === 0
       ? `<div class="empty-state">No shipments are assigned to ${escapeHtml(state.user.email)} yet.</div>`
       : shipments
-          .map(
-            (shipment) => `
+          .map((shipment) => {
+            const packages = getShipmentContainers(shipment);
+            return `
               <div class="customer-card" data-tracking="${escapeHtml(shipment.trackingId)}">
                 <strong>${escapeHtml(shipment.trackingId)}</strong>
-                <span>${escapeHtml(shipment.cargo || "Cargo shipment")}</span>
+                <span>${escapeHtml(packages.length > 1 ? `${packages.length} packages in ${packages.length} containers` : shipment.cargo || "Cargo shipment")}</span>
                 <p>${escapeHtml(shipment.origin)} to ${escapeHtml(shipment.destination)}</p>
                 <p>${escapeHtml(shipment.status)} - ${escapeHtml(currentLocationName(shipment))}</p>
-                <p>ETA ${formatDate(shipment.eta)} - ${formatNumber(shipment.cargoWeightLbs, " lbs")}</p>
-              </div>`
-          )
+                <p>ETA ${formatDate(shipment.eta)} - ${packages.length > 1 ? `${packages.length} containers` : formatNumber(shipment.cargoWeightLbs, " lbs")}</p>
+              </div>`;
+          })
           .join("");
 
   elements.customerShipments.querySelectorAll(".customer-card").forEach((card) => {
@@ -1807,8 +1874,22 @@ async function logout() {
 }
 
 function formObject(form) {
-  const data = new FormData(form);
-  return Object.fromEntries(data.entries());
+  const data = Object.fromEntries(new FormData(form).entries());
+  const containers = [...form.querySelectorAll("[data-container-card]")].map((card) => {
+    const item = {};
+    card.querySelectorAll("[data-package-field]").forEach((control) => {
+      item[control.dataset.packageField] = control.value;
+      delete data[control.name];
+    });
+    return item;
+  });
+  return { ...data, ...(containers[0] || {}), containers };
+}
+
+function resetShipmentForm(form) {
+  form.reset();
+  [...form.querySelectorAll("[data-container-card]")].slice(1).forEach((card) => card.remove());
+  updateContainerAddButton();
 }
 
 async function createShipment(event) {
@@ -1817,7 +1898,7 @@ async function createShipment(event) {
   try {
     if (useFirebase()) {
       const response = await firebaseClient.createShipment(formObject(form));
-      form.reset();
+      resetShipmentForm(form);
       state.selectedShipment = response.shipment;
       await refreshAll();
       toast(`Created shipment ${response.shipment.trackingId}.`);
@@ -1827,7 +1908,7 @@ async function createShipment(event) {
       method: "POST",
       body: formObject(form)
     });
-    form.reset();
+    resetShipmentForm(form);
     state.selectedShipment = response.shipment;
     await refreshAll();
     toast(`Created ${response.shipment.trackingId} and recorded email update.`);
@@ -2064,6 +2145,7 @@ function bindEvents() {
   elements.customerChatForm.addEventListener("submit", sendCustomerMessage);
   elements.adminChatForm.addEventListener("submit", sendAdminReply);
   elements.shipmentForm.addEventListener("submit", createShipment);
+  elements.addShipmentContainer?.addEventListener("click", addShipmentContainer);
   elements.updateForm.addEventListener("submit", updateShipment);
   elements.advancePackage.addEventListener("click", advancePackage);
   elements.notifyPackage.addEventListener("click", notifyPackage);

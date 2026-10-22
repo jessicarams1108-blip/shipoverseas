@@ -92,18 +92,9 @@ function normalizeDateFields(item) {
   };
 }
 
-function normalizeShipment(input = {}) {
-  const status = String(input.status || "Booking Confirmed").trim();
-  const trackingId = String(input.trackingId || "").trim().toUpperCase();
-  const currentLocationName = String(input.currentLocationName || input.locationName || input.origin || "").trim();
-  const explicitProgress = numberOrBlank(input.progress);
+function normalizeContainer(input = {}) {
   return {
-    trackingId,
     container: String(input.container || "").trim().toUpperCase(),
-    billOfLading: String(input.billOfLading || "").trim().toUpperCase(),
-    receiverName: String(input.receiverName || "").trim(),
-    receiverEmail: normalizeEmail(input.receiverEmail),
-    vessel: String(input.vessel || "").trim(),
     cargo: String(input.cargo || "").trim(),
     cargoType: String(input.cargoType || "").trim(),
     cargoCondition: String(input.cargoCondition || "").trim(),
@@ -115,7 +106,25 @@ function normalizeShipment(input = {}) {
     cargoWeightLbs: numberOrBlank(input.cargoWeightLbs),
     cargoReference: String(input.cargoReference || "").trim(),
     cargoManifest: String(input.cargoManifest || "").trim(),
-    cargoNotes: String(input.cargoNotes || "").trim(),
+    cargoNotes: String(input.cargoNotes || "").trim()
+  };
+}
+
+function normalizeShipment(input = {}) {
+  const status = String(input.status || "Booking Confirmed").trim();
+  const trackingId = String(input.trackingId || "").trim().toUpperCase();
+  const currentLocationName = String(input.currentLocationName || input.locationName || input.origin || "").trim();
+  const explicitProgress = numberOrBlank(input.progress);
+  const containers = (Array.isArray(input.containers) && input.containers.length ? input.containers : [input]).map(normalizeContainer);
+  const primaryContainer = containers[0] || normalizeContainer(input);
+  return {
+    trackingId,
+    ...primaryContainer,
+    containers,
+    billOfLading: String(input.billOfLading || "").trim().toUpperCase(),
+    receiverName: String(input.receiverName || "").trim(),
+    receiverEmail: normalizeEmail(input.receiverEmail),
+    vessel: String(input.vessel || "").trim(),
     origin: String(input.origin || "").trim(),
     destination: String(input.destination || "").trim(),
     status,
@@ -149,6 +158,15 @@ function validateShipment(shipment) {
   const missing = required.filter((field) => !shipment[field]);
   if (missing.length) return `Missing required fields: ${missing.join(", ")}.`;
   if (!/^[A-Z]{4}[0-9]{7}$/.test(shipment.trackingId)) return "Tracking ID must look like SOVX1234567.";
+  if (!Array.isArray(shipment.containers) || shipment.containers.length < 1 || shipment.containers.length > 3) {
+    return "A shipment must have between one and three containers.";
+  }
+  if (shipment.containers.some((item) => !item.container || !item.cargo)) {
+    return "Each container needs a container ID and package title.";
+  }
+  if (new Set(shipment.containers.map((item) => item.container)).size !== shipment.containers.length) {
+    return "Each container ID in the shipment must be unique.";
+  }
   return "";
 }
 
@@ -414,7 +432,7 @@ async function findShipment(lookup) {
   const user = requireAuthUser();
   const normalizedLookup = String(lookup || "").trim().toUpperCase();
   const shipments = await listShipments();
-  const found = shipments.find((shipment) => shipment.trackingId === normalizedLookup || shipment.billOfLading === normalizedLookup);
+  const found = shipments.find((shipment) => shipment.trackingId === normalizedLookup || shipment.billOfLading === normalizedLookup || shipment.container === normalizedLookup || shipment.containers?.some((item) => item.container === normalizedLookup));
   if (found) return found;
   if (isTrackingId(normalizedLookup)) {
     try {

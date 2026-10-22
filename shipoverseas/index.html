@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20261022-avatar-bold" />
+    <link rel="stylesheet" href="./styles.css?v=20261022-multi-container" />
   </head>
   <body>
     <header class="topbar">
@@ -560,10 +560,36 @@
               <input name="receiverEmail" type="email" required placeholder="customer@example.com" />
               <small class="field-note">Use the exact email the customer uses to log in. This assigns the package to their portal.</small>
             </label>
-            <label>
-              Container
-              <input name="container" required placeholder="SOU1234567" />
-            </label>
+            <div class="shipment-container-panel ops-span-4">
+              <div class="section-head compact">
+                <div>
+                  <p class="eyebrow">CONTAINER PACKAGES</p>
+                  <h3>Shipment containers</h3>
+                  <p class="field-note">One shipment can include up to three containers, each with its own package details.</p>
+                </div>
+                <button class="secondary-button" id="addShipmentContainer" type="button">+ Add container</button>
+              </div>
+              <div class="shipment-container-list" id="shipmentContainerList">
+                <fieldset class="shipment-container-card" data-container-card>
+                  <legend>Container 1 · Package details</legend>
+                  <div class="shipment-container-fields">
+                    <label>Container ID<input name="container" data-package-field="container" required placeholder="SOU1234567" /></label>
+                    <label>Package / Cargo Title<input name="cargo" data-package-field="cargo" required placeholder="2023 Chevrolet Silverado 1500" /></label>
+                    <label>Cargo Type<input name="cargoType" data-package-field="cargoType" placeholder="Vehicle, boat, machinery" /></label>
+                    <label>Condition<select name="cargoCondition" data-package-field="cargoCondition"><option value="">Select condition</option><option>Operable</option><option>Inoperable</option><option>New</option><option>Used</option><option>Crated</option></select></label>
+                    <label>Quantity<input name="cargoQuantity" data-package-field="cargoQuantity" type="number" min="1" step="1" placeholder="1" /></label>
+                    <label>Length (in)<input name="cargoLengthIn" data-package-field="cargoLengthIn" type="number" min="0" step="0.1" placeholder="231.9" /></label>
+                    <label>Width (in)<input name="cargoWidthIn" data-package-field="cargoWidthIn" type="number" min="0" step="0.1" placeholder="81.2" /></label>
+                    <label>Height (in)<input name="cargoHeightIn" data-package-field="cargoHeightIn" type="number" min="0" step="0.1" placeholder="75.6" /></label>
+                    <label>Volume (cu. ft.)<input name="cargoVolumeCuFt" data-package-field="cargoVolumeCuFt" type="number" min="0" step="0.1" placeholder="824" /></label>
+                    <label>Weight (lbs)<input name="cargoWeightLbs" data-package-field="cargoWeightLbs" type="number" min="0" step="0.1" placeholder="4594" /></label>
+                    <label>VIN / Serial / Reference<input name="cargoReference" data-package-field="cargoReference" placeholder="VIN, hull ID, lot number" /></label>
+                    <label class="ops-span-4">Package Manifest<textarea name="cargoManifest" data-package-field="cargoManifest" placeholder="Describe the package, dimensions, contents, and handling details"></textarea></label>
+                    <label class="ops-span-4">Package Notes<textarea name="cargoNotes" data-package-field="cargoNotes" placeholder="Condition, keys, loading notes, special handling, customs notes"></textarea></label>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
             <label>
               Vessel
               <input name="vessel" required placeholder="MV Pacific Ledger" />
@@ -575,53 +601,6 @@
             <label>
               Destination Port
               <input name="destination" required placeholder="Los Angeles" />
-            </label>
-            <label>
-              Cargo / Asset Title
-              <input name="cargo" required placeholder="2023 Chevrolet Silverado 1500 2WD Double Cab 147 Work Truck" />
-            </label>
-            <label>
-              Cargo Type
-              <input name="cargoType" placeholder="Vehicle, boat, container, machinery" />
-            </label>
-            <label>
-              Condition
-              <select name="cargoCondition">
-                <option value="">Select condition</option>
-                <option>Operable</option>
-                <option>Inoperable</option>
-                <option>New</option>
-                <option>Used</option>
-                <option>Crated</option>
-              </select>
-            </label>
-            <label>
-              Quantity
-              <input name="cargoQuantity" type="number" min="1" step="1" placeholder="1" />
-            </label>
-            <label>
-              Length (in)
-              <input name="cargoLengthIn" type="number" min="0" step="0.1" placeholder="231.9" />
-            </label>
-            <label>
-              Width (in)
-              <input name="cargoWidthIn" type="number" min="0" step="0.1" placeholder="81.2" />
-            </label>
-            <label>
-              Height (in)
-              <input name="cargoHeightIn" type="number" min="0" step="0.1" placeholder="75.6" />
-            </label>
-            <label>
-              Volume (cu. ft.)
-              <input name="cargoVolumeCuFt" type="number" min="0" step="0.1" placeholder="824" />
-            </label>
-            <label>
-              Weight (lbs)
-              <input name="cargoWeightLbs" type="number" min="0" step="0.1" placeholder="4594" />
-            </label>
-            <label>
-              VIN / Serial / Reference
-              <input name="cargoReference" placeholder="VIN, hull ID, lot number" />
             </label>
             <label>
               ETA
@@ -650,16 +629,6 @@
             <label>
               Risk Note
               <input name="risk" placeholder="On track" />
-            </label>
-            <label class="ops-span-4">
-              Full Cargo Manifest
-              <textarea name="cargoManifest" placeholder='2023 Chevrolet Silverado 1500 2WD Double Cab 147 Work Truck (Operable)
-L: 231.9&quot; W: 81.2&quot; H: 75.60&quot;
-V: 824 cu. ft. W: 4594 lbs'></textarea>
-            </label>
-            <label class="ops-span-4">
-              Cargo Notes
-              <textarea name="cargoNotes" placeholder="Pickup condition, keys, loading notes, trailer details, special handling, photos received, customs notes"></textarea>
             </label>
             <button class="primary-button form-submit" type="submit">
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -861,6 +830,6 @@ V: 824 cu. ft. W: 4594 lbs'></textarea>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20261022-customer-copy"></script>
+    <script type="module" src="./app.js?v=20261022-multi-container"></script>
   </body>
 </html>

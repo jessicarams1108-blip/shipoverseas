@@ -1766,6 +1766,55 @@ body.dark .live-map {
   margin-bottom: 1rem;
 }
 
+.shipment-container-panel,
+.shipment-container-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  padding: 1rem;
+}
+
+.shipment-container-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.shipment-container-card legend {
+  padding: 0 0.4rem;
+  color: var(--ink);
+  font-weight: 950;
+}
+
+.shipment-container-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.remove-container-button {
+  margin: 0 0 0.75rem;
+}
+
+.container-package-breakdown dd {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.container-package-summary {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+
+.container-package-summary p,
+.container-package-summary small {
+  margin: 0;
+}
+
 .form-submit {
   align-self: end;
 }
@@ -1972,7 +2021,8 @@ tbody tr.active {
   .feature-grid,
   .tools-grid,
   .footer-grid,
-  .ops-form {
+  .ops-form,
+  .shipment-container-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -2078,7 +2128,8 @@ tbody tr.active {
   .profile-grid,
   .profile-workspace,
   .profile-details,
-  .ops-form {
+  .ops-form,
+  .shipment-container-fields {
     grid-template-columns: 1fr;
   }
 
