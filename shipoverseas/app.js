@@ -1037,8 +1037,10 @@ function renderTimeline() {
   elements.timelineCompletion.textContent = `${progress}%`;
   elements.timelineProgressLabel.textContent = `${progress}% complete`;
   elements.timelineRouteOrigin.textContent = shipment.origin || "Origin";
-  elements.timelineRouteCurrent.textContent = currentLocationName(shipment);
-  positionRouteBoat(progress);
+  const currentLocation = currentLocationName(shipment);
+  elements.timelineRouteCurrent.textContent = currentLocation;
+  const hasMovedFromOrigin = currentLocation.trim().toLocaleLowerCase() !== String(shipment.origin || "").trim().toLocaleLowerCase();
+  positionRouteBoat(hasMovedFromOrigin ? progress : 0);
   elements.timelineRouteDestination.textContent = shipment.destination || "Destination";
   elements.timelineRouteTracking.textContent = shipment.trackingId;
   elements.timelineRouteEta.textContent = formatDate(shipment.eta);
