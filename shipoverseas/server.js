@@ -748,7 +748,7 @@ async function handleApi(request, response, parsed) {
       const body = await parseBody(request);
       const emailLower = String(body.email || "").trim().toLowerCase();
       const codeHash = hashSecret(String(body.code || "").trim());
-      const newPassword = String(body.password || "").trim();
+      const newPassword = String(body.password || "");
       if (!emailLower || !String(body.code || "").trim() || newPassword.length < 4) {
         sendError(response, 400, "Email, reset code, and a password with at least 4 characters are required.");
         return;
