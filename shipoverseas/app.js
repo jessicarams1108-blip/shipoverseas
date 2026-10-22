@@ -1,5 +1,5 @@
 import { countryCodes, countryLanguage, languageLabelFallback } from "./country-language.js?v=20260819-country-selector";
-import { firebaseClient } from "./firebase-client.js?v=20260823-lookup-route";
+import { firebaseClient } from "./firebase-client.js?v=20261022-customer-copy";
 
 const ADMIN_EMAIL = "Hardewusi@gmail.com";
 const TOKEN_KEY = "shipoverseas.token";
@@ -1066,7 +1066,7 @@ function renderAdminBackend() {
   elements.adminLock.textContent = "Verified operations access";
   elements.adminLock.className = "admin-lock unlocked";
   if (state.dataWarning) {
-    elements.adminLock.textContent = "Signed in - Firestore data offline";
+    elements.adminLock.textContent = "Signed in - shipment data temporarily unavailable";
     elements.adminLock.className = "admin-lock";
   }
 
@@ -1311,6 +1311,15 @@ function renderSupport() {
     : `<div class="empty-state">Choose a customer conversation to read and reply.</div>`;
 }
 
+function displayEmailStatus(status) {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "firebase-recorded" || normalized === "simulated") return "Update recorded";
+  if (normalized === "failed") return "Not sent";
+  if (normalized === "muted") return "Paused by notification preferences";
+  if (normalized === "sent") return "Sent";
+  return status || "Recorded";
+}
+
 function renderEmailList(emails) {
   if (!emails.length) return `<div class="empty-state">No email updates yet.</div>`;
   return emails
@@ -1320,7 +1329,7 @@ function renderEmailList(emails) {
         <div class="email-item">
           <strong>${escapeHtml(email.subject)}</strong>
           <p>${escapeHtml(email.body)}</p>
-          <small>${escapeHtml(email.status)} - ${formatDateTime(email.createdAt)}</small>
+          <small>${escapeHtml(displayEmailStatus(email.status))} - ${formatDateTime(email.createdAt)}</small>
         </div>`
     )
     .join("");
@@ -1445,7 +1454,7 @@ async function login(event) {
   const form = event.currentTarget;
   const data = new FormData(form);
   const email = String(data.get("email") || "").trim();
-  setAuthMessage(useFirebase() ? "Checking your Firebase account..." : "Checking your account...");
+  setAuthMessage("Checking your account...");
   setFormBusy(form, true, "Signing in...");
   try {
     requireAvailableBackend();
@@ -1525,7 +1534,7 @@ async function register(event) {
       renderAll();
       const registerWarning = state.user.profileWarning || state.dataWarning;
       setAuthMessage(registerWarning ? `Account created. ${registerWarning}` : "Account created. Your portal is ready.");
-      toast(registerWarning ? "Account created. Firestore data needs attention." : "Firebase account created.");
+      toast(registerWarning ? `Account created. ${registerWarning}` : "Account created.");
       return;
     }
     const response = await apiFetch("/api/register", {
@@ -1666,7 +1675,7 @@ async function saveProfileSettings(event) {
       state.user = await firebaseClient.updateProfileDetails({ name });
       await loadPrivateData();
       renderAll();
-      toast("Firebase account details saved.");
+      toast("Account details saved.");
       return;
     }
     const response = await apiFetch("/api/me", {
@@ -1693,7 +1702,7 @@ async function saveNotificationPreferences(event) {
       state.user = await firebaseClient.updatePreferences(preferences);
       await loadPrivateData();
       renderAll();
-      toast("Firebase notification preferences saved.");
+      toast("Notification preferences saved.");
       return;
     }
     const response = await apiFetch("/api/me", {
@@ -1720,7 +1729,7 @@ async function changeAccountPassword(event) {
       form.reset();
       await loadPrivateData();
       renderAll();
-      toast("Firebase password changed.");
+      toast("Password changed.");
       return;
     }
     await apiFetch("/api/change-password", {
@@ -1740,10 +1749,10 @@ async function createDataBackup() {
   try {
     if (useFirebase()) {
       const response = await firebaseClient.createBackup();
-      elements.backupStatus.textContent = `Firestore backup point recorded: ${response.fileName}`;
+      elements.backupStatus.textContent = `Backup record created: ${response.fileName}`;
       await loadPrivateData();
       renderAll();
-      toast("Firebase backup record created.");
+      toast("Backup record created.");
       return;
     }
     const response = await apiFetch("/api/admin/backups", { method: "POST" });
@@ -1770,7 +1779,7 @@ async function exportDataJson() {
     URL.revokeObjectURL(url);
     await loadPrivateData();
     renderAll();
-    toast(useFirebase() ? "Firebase export prepared." : "Export prepared.");
+    toast("Export prepared.");
   } catch (error) {
     toast(error.message);
   }
@@ -1811,7 +1820,7 @@ async function createShipment(event) {
       form.reset();
       state.selectedShipment = response.shipment;
       await refreshAll();
-      toast(`Created ${response.shipment.trackingId} in Firebase.`);
+      toast(`Created shipment ${response.shipment.trackingId}.`);
       return;
     }
     const response = await apiFetch("/api/shipments", {
@@ -1848,7 +1857,7 @@ async function updateShipment(event) {
       const response = await firebaseClient.updateShipment(trackingId, body);
       state.selectedShipment = response.shipment;
       await refreshAll();
-      toast(`Updated ${trackingId} in Firebase.`);
+      toast(`Updated shipment ${trackingId}.`);
       return;
     }
     const response = await apiFetch(`/api/shipments/${encodeURIComponent(trackingId)}`, {
@@ -1871,7 +1880,7 @@ async function advancePackage() {
       const response = await firebaseClient.advanceShipment(trackingId);
       state.selectedShipment = response.shipment;
       await refreshAll();
-      toast(`${trackingId} advanced in Firebase.`);
+      toast(`${trackingId} advanced to the next step.`);
       return;
     }
     const response = await apiFetch(`/api/shipments/${encodeURIComponent(trackingId)}/advance`, { method: "POST" });
@@ -1890,7 +1899,7 @@ async function notifyPackage() {
     if (useFirebase()) {
       await firebaseClient.notifyShipment(trackingId);
       await refreshAll();
-      toast(`Firebase email update recorded for ${trackingId}.`);
+      toast(`Customer update recorded for ${trackingId}.`);
       return;
     }
     await apiFetch(`/api/shipments/${encodeURIComponent(trackingId)}/notify`, { method: "POST" });
@@ -1919,7 +1928,7 @@ async function sendCustomerMessage(event) {
       state.supportMessages = response.messages;
       await loadPrivateData();
       renderAll();
-      toast("Message sent through Firebase support.");
+      toast("Message sent to support.");
       return;
     }
     const path = state.selectedSupportConversationId
@@ -1959,7 +1968,7 @@ async function sendAdminReply(event) {
       state.supportMessages = response.messages;
       await loadPrivateData();
       renderAll();
-      toast("Firebase reply sent.");
+      toast("Reply sent.");
       return;
     }
     const response = await apiFetch(`/api/support/conversations/${encodeURIComponent(state.selectedSupportConversationId)}/messages`, {
@@ -1989,7 +1998,7 @@ function fillAdminLogin() {
   switchAuthTab("login");
   elements.loginForm.elements.email.value = ADMIN_EMAIL;
   elements.loginForm.elements.password.value = "";
-  setAuthMessage(useFirebase() ? "Admin email ready. Enter the Firebase password for this account." : "Admin email ready. Enter the Render admin password for this account.");
+  setAuthMessage("Admin email ready. Enter the password for this account.");
   elements.loginForm.elements.password.focus();
 }
 
@@ -1997,8 +2006,8 @@ function fillAdminReset() {
   switchAuthTab("reset");
   elements.resetForm.elements.email.value = ADMIN_EMAIL;
   elements.resetMessage.textContent = useFirebase()
-    ? "Send the reset email, set a new Firebase password, then return to Login."
-    : "Send the reset code, set a new Render password, then return to Login.";
+    ? "Send the reset email, follow the instructions, then return to Login."
+    : "Send the reset code, set a new password, then return to Login.";
 }
 
 function goBack() {

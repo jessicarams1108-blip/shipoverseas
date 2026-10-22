@@ -168,21 +168,21 @@ function isFirestoreOfflineError(error) {
 
 function normalizeFirebaseError(error) {
   const code = error?.code || "";
-  if (code.includes("permission-denied")) return new Error("Firebase permission denied. Check your Firestore rules and admin email.");
+  if (code.includes("permission-denied")) return new Error("Your account does not have permission to complete this action. Contact support.");
   if (isFirestoreOfflineError(error)) {
-    return new Error("Firebase signed in, but Firestore data is offline. Check Firestore Database, browser network/ad blocker, then refresh.");
+    return new Error("Your account is signed in, but shipment data is temporarily unavailable. Check your connection and refresh.");
   }
   if (code.includes("invalid-credential") || code.includes("user-not-found") || code.includes("wrong-password")) {
-    return new Error("Invalid email or password. Use Reset Password to set a new Firebase password for this account.");
+    return new Error("Invalid email or password. Use Reset Password to set a new password for this account.");
   }
-  if (code.includes("operation-not-allowed")) return new Error("Firebase Email/Password sign-in is not enabled yet.");
+  if (code.includes("operation-not-allowed")) return new Error("Email and password sign-in is not available yet. Contact support.");
   if (code.includes("unauthorized-domain")) {
-    return new Error("This domain is not authorized in Firebase Auth. Add shipoversea.site and www.shipoversea.site in Authentication settings.");
+    return new Error("This site is not authorized to sign in yet. Contact ShipOverseas support.");
   }
   if (code.includes("email-already-in-use")) return new Error("An account already exists for that email.");
   if (code.includes("weak-password")) return new Error("Password should be at least 6 characters.");
-  if (code.includes("network-request-failed")) return new Error("Firebase network failed. Check your internet connection.");
-  return new Error(error?.message || "Firebase request failed.");
+  if (code.includes("network-request-failed")) return new Error("Connection failed. Check your internet connection.");
+  return new Error("Something went wrong. Please try again.");
 }
 
 function makeFallbackProfile(authUser, displayName = "", existing = {}) {
@@ -243,7 +243,7 @@ function getInitError() {
 }
 
 async function requireReady() {
-  if (!enabled) throw new Error("Firebase is not connected.");
+  if (!enabled) throw new Error("Your account service is temporarily unavailable. Please try again.");
   await authReady;
 }
 
@@ -298,7 +298,7 @@ async function login(email, password) {
 async function register({ name, email, password }) {
   await requireReady();
   const emailLower = normalizeEmail(email);
-  if (isAdminEmail(emailLower)) throw new Error("The admin account is managed in Firebase. Use the existing admin login.");
+  if (isAdminEmail(emailLower)) throw new Error("The admin account is already set up. Use the existing admin login.");
   try {
     const result = await authMod.createUserWithEmailAndPassword(auth, emailLower, String(password || ""));
     await authMod.updateProfile(result.user, { displayName: String(name || "").trim() });
@@ -315,7 +315,7 @@ async function requestPasswordReset(email) {
       url: `${window.location.origin}/#portal`,
       handleCodeInApp: false
     });
-    return { message: "Firebase sent a password reset email. Open that email to choose a new password." };
+    return { message: "A password reset email has been sent. Open it to choose a new password." };
   } catch (error) {
     throw normalizeFirebaseError(error);
   }
@@ -691,9 +691,9 @@ async function listAuditLogs() {
 async function createBackup() {
   await requireReady();
   requireAdminUser();
-  const fileName = `firebase-live-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  await addAuditLog("backup.created", { fileName, provider: "firebase" });
-  return { fileName, createdAt: nowIso(), provider: "firebase" };
+  const fileName = `shipoverseas-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  await addAuditLog("backup.created", { fileName });
+  return { fileName, createdAt: nowIso() };
 }
 
 async function exportData() {
