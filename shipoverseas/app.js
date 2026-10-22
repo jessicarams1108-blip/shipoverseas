@@ -2109,7 +2109,7 @@ async function boot() {
   initCountrySelector();
   state.renderRuntime = await detectRenderBackend();
   state.usingRenderBackend = Boolean(state.renderRuntime);
-  state.usingFirebase = state.usingRenderBackend ? false : await firebaseClient.init();
+  state.usingFirebase = await firebaseClient.init();
   configureFirebaseUi();
   bindEvents();
   await refreshAll();
