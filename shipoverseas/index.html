@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20261022-timeline-theme" />
+    <link rel="stylesheet" href="./styles.css?v=20261022-timeline-contrast" />
   </head>
   <body>
     <header class="topbar">
@@ -184,14 +184,14 @@
             <div class="timeline-route-brand"><strong>SHIP<span>OVERSEAS</span></strong><small>OCEAN LOGISTICS</small></div>
             <div class="timeline-route-map" aria-hidden="true">
               <svg viewBox="0 0 800 260" preserveAspectRatio="none">
-                <path class="route-line-base" d="M82 145 C205 115 258 180 360 145 S520 95 718 132" />
+                <path id="timelineRoutePath" class="route-line-base" d="M82 145 C205 115 258 180 360 145 S520 95 718 132" />
                 <path class="route-line-active" d="M82 145 C205 115 258 180 360 145 S520 95 718 132" />
                 <circle class="route-point route-point-origin" cx="82" cy="145" r="8" />
-                <circle class="route-point route-point-current" cx="402" cy="132" r="9" />
+                <circle id="timelineRouteCurrentMarker" class="route-point route-point-current" cx="82" cy="145" r="9" />
                 <circle class="route-point route-point-destination" cx="718" cy="132" r="8" />
-                <path class="route-ship" d="M365 104h48l-7 14h-32l-9-14Zm9-5h15v5h-15z">
-                  <animateMotion dur="18s" repeatCount="indefinite" rotate="auto" path="M -283 41 C -160 11 -107 76 -5 41 S 155 -9 353 28" />
-                </path>
+                <g id="timelineBoat" class="route-ship" transform="translate(82 145)" aria-hidden="true">
+                  <path d="M-24 2h48l-7 13h-32L-24 2Zm7-6h15v6h-15z" />
+                </g>
               </svg>
               <div class="route-place route-place-origin"><span id="timelineRouteOrigin">Origin</span><small>ORIGIN</small></div>
               <div class="route-place route-place-current"><span id="timelineRouteCurrent">Current location</span><small>IN TRANSIT</small></div>
@@ -849,6 +849,6 @@
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20261022-timeline-theme"></script>
+    <script type="module" src="./app.js?v=20261022-timeline-contrast"></script>
   </body>
 </html>

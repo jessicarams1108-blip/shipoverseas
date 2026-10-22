@@ -230,9 +230,13 @@ const elements = {
   timelineProgressLabel: document.querySelector("#timelineProgressLabel"),
   timelineRouteOrigin: document.querySelector("#timelineRouteOrigin"),
   timelineRouteCurrent: document.querySelector("#timelineRouteCurrent"),
+  timelineRouteCurrentLabel: document.querySelector("#timelineRouteCurrent")?.closest(".route-place-current"),
   timelineRouteDestination: document.querySelector("#timelineRouteDestination"),
   timelineRouteTracking: document.querySelector("#timelineRouteTracking"),
   timelineRouteEta: document.querySelector("#timelineRouteEta"),
+  timelineRoutePath: document.querySelector("#timelineRoutePath"),
+  timelineRouteCurrentMarker: document.querySelector("#timelineRouteCurrentMarker"),
+  timelineBoat: document.querySelector("#timelineBoat"),
   timeline: document.querySelector("#timeline"),
   loginForm: document.querySelector("#loginForm"),
   registerForm: document.querySelector("#registerForm"),
@@ -1010,6 +1014,7 @@ function renderTimeline() {
     elements.timelineProgressLabel.textContent = "Awaiting tracking";
     elements.timelineRouteOrigin.textContent = "Origin";
     elements.timelineRouteCurrent.textContent = "Current location";
+    positionRouteBoat(0);
     elements.timelineRouteDestination.textContent = "Destination";
     elements.timelineRouteTracking.textContent = "Search for a shipment";
     elements.timelineRouteEta.textContent = "-";
@@ -1033,6 +1038,7 @@ function renderTimeline() {
   elements.timelineProgressLabel.textContent = `${progress}% complete`;
   elements.timelineRouteOrigin.textContent = shipment.origin || "Origin";
   elements.timelineRouteCurrent.textContent = currentLocationName(shipment);
+  positionRouteBoat(progress);
   elements.timelineRouteDestination.textContent = shipment.destination || "Destination";
   elements.timelineRouteTracking.textContent = shipment.trackingId;
   elements.timelineRouteEta.textContent = formatDate(shipment.eta);
@@ -1055,6 +1061,20 @@ function renderTimeline() {
         </li>`;
     })
     .join("");
+}
+
+function positionRouteBoat(progress) {
+  const route = elements.timelineRoutePath;
+  if (!route || !elements.timelineBoat || !elements.timelineRouteCurrentMarker) return;
+  const length = route.getTotalLength();
+  const point = route.getPointAtLength(length * Math.max(0, Math.min(100, progress)) / 100);
+  elements.timelineBoat.setAttribute("transform", `translate(${point.x} ${point.y})`);
+  elements.timelineRouteCurrentMarker.setAttribute("cx", point.x);
+  elements.timelineRouteCurrentMarker.setAttribute("cy", point.y);
+  if (elements.timelineRouteCurrentLabel) {
+    const labelPosition = Math.max(18, Math.min(82, point.x / 8));
+    elements.timelineRouteCurrentLabel.style.left = `${labelPosition}%`;
+  }
 }
 
 function renderFleet() {

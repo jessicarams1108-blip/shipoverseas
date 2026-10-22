@@ -1413,11 +1413,18 @@ body.dark .live-map {
   justify-content: space-between;
   gap: 0.8rem;
   padding-bottom: 0.75rem;
+  color: var(--ink);
+  font-size: 0.68rem;
 }
 
 .timeline-status-heading span:last-child {
+  padding: 0.24rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--blue) 20%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 9%, var(--surface));
   color: var(--blue-strong);
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .timeline-status-card .timeline-scroll {
@@ -1518,7 +1525,8 @@ body.dark .live-map {
 .timeline-status-card .timeline-step-copy span {
   min-height: 0;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .timeline-step-copy em {
@@ -1530,25 +1538,32 @@ body.dark .live-map {
 .timeline-badge {
   align-self: center;
   border-radius: 999px;
-  padding: 0.38rem 0.65rem;
-  color: white;
-  background: var(--blue);
-  font-size: 0.57rem;
-  font-weight: 950;
-  letter-spacing: 0.04em;
+  border: 1px solid var(--line);
+  padding: 0.38rem 0.68rem;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.035em;
   white-space: nowrap;
 }
 
 .timeline-badge.done {
-  background: var(--green);
+  border-color: color-mix(in srgb, var(--green) 30%, var(--line));
+  background: color-mix(in srgb, var(--green) 12%, var(--surface));
+  color: var(--green);
 }
 
 .timeline-badge.current {
-  background: var(--red);
+  border-color: color-mix(in srgb, var(--red) 30%, var(--line));
+  background: color-mix(in srgb, var(--red) 11%, var(--surface));
+  color: var(--red-strong);
 }
 
 .timeline-badge.pending {
-  background: color-mix(in srgb, var(--green) 74%, var(--blue));
+  border-color: color-mix(in srgb, var(--blue) 18%, var(--line));
+  background: color-mix(in srgb, var(--blue) 6%, var(--surface));
+  color: var(--blue-strong);
 }
 
 .timeline-caption {
