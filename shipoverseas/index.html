@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20261022-timeline-reference" />
+    <link rel="stylesheet" href="./styles.css?v=20261022-timeline-theme" />
   </head>
   <body>
     <header class="topbar">
@@ -189,7 +189,9 @@
                 <circle class="route-point route-point-origin" cx="82" cy="145" r="8" />
                 <circle class="route-point route-point-current" cx="402" cy="132" r="9" />
                 <circle class="route-point route-point-destination" cx="718" cy="132" r="8" />
-                <path class="route-ship" d="M365 104h48l-7 14h-32l-9-14Zm9-5h15v5h-15z" />
+                <path class="route-ship" d="M365 104h48l-7 14h-32l-9-14Zm9-5h15v5h-15z">
+                  <animateMotion dur="18s" repeatCount="indefinite" rotate="auto" path="M -283 41 C -160 11 -107 76 -5 41 S 155 -9 353 28" />
+                </path>
               </svg>
               <div class="route-place route-place-origin"><span id="timelineRouteOrigin">Origin</span><small>ORIGIN</small></div>
               <div class="route-place route-place-current"><span id="timelineRouteCurrent">Current location</span><small>IN TRANSIT</small></div>
@@ -847,6 +849,6 @@
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20261022-timeline-reference"></script>
+    <script type="module" src="./app.js?v=20261022-timeline-theme"></script>
   </body>
 </html>
