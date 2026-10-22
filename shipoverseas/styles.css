@@ -1202,6 +1202,404 @@ body.dark .live-map {
   }
 }
 
+/* Reference-inspired container route and vertical milestone tracker. */
+.timeline-showcase {
+  color: #f4f8ff;
+  border: 1px solid rgba(106, 163, 224, 0.24);
+  background: #061a39;
+  box-shadow: 0 22px 60px rgba(4, 17, 39, 0.2);
+}
+
+.timeline-showcase::before {
+  background: radial-gradient(ellipse at 22% 48%, rgba(17, 77, 148, 0.34), transparent 48%),
+    linear-gradient(120deg, #071a37, #061631 66%, #071b39);
+}
+
+.timeline-showcase .section-head h2,
+.timeline-showcase #lastUpdated {
+  color: #f4f8ff;
+}
+
+.timeline-showcase .section-head .eyebrow {
+  color: #63b7ff;
+}
+
+.timeline-showcase-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(19rem, 0.9fr);
+  min-height: 26rem;
+  overflow: hidden;
+  border: 1px solid rgba(160, 196, 236, 0.34);
+  border-radius: 1.15rem;
+  background: rgba(2, 15, 35, 0.36);
+}
+
+.timeline-route-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1rem, 3vw, 2rem);
+  background-color: #061a39;
+  background-image: radial-gradient(ellipse at 48% 52%, rgba(15, 82, 157, 0.23), transparent 60%),
+    radial-gradient(ellipse at 20% 20%, rgba(39, 102, 172, 0.12), transparent 40%);
+}
+
+.timeline-route-brand {
+  display: flex;
+  width: fit-content;
+  flex-direction: column;
+  gap: 0.12rem;
+  color: white;
+}
+
+.timeline-route-brand strong {
+  font-size: 1.12rem;
+  font-style: italic;
+  letter-spacing: 0.035em;
+}
+
+.timeline-route-brand strong span {
+  color: #45a8ff;
+}
+
+.timeline-route-brand small {
+  color: #97b8dc;
+  font-size: 0.57rem;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+}
+
+.timeline-route-map {
+  position: relative;
+  min-height: 13rem;
+  margin: 0.7rem 0 0.4rem;
+  background-image: radial-gradient(ellipse at 21% 39%, rgba(47, 115, 185, 0.18) 0 13%, transparent 13.5%),
+    radial-gradient(ellipse at 40% 48%, rgba(47, 115, 185, 0.14) 0 17%, transparent 17.5%),
+    radial-gradient(ellipse at 70% 38%, rgba(47, 115, 185, 0.16) 0 16%, transparent 16.5%),
+    radial-gradient(circle, rgba(116, 171, 229, 0.12) 0.7px, transparent 0.85px);
+  background-size: auto, auto, auto, 15px 15px;
+  background-position: center;
+}
+
+.timeline-route-map svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.route-line-base,
+.route-line-active {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 2.6;
+}
+
+.route-line-base {
+  stroke: rgba(146, 192, 239, 0.38);
+}
+
+.route-line-active {
+  stroke: #e8f6ff;
+  filter: drop-shadow(0 0 5px rgba(147, 214, 255, 0.86));
+}
+
+.route-point {
+  fill: #0a2d57;
+  stroke: #eaf7ff;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px rgba(54, 162, 255, 0.95));
+}
+
+.route-point-origin {
+  fill: #ff8a42;
+  stroke: #ffcf9e;
+}
+
+.route-point-current {
+  fill: #21a7ff;
+  stroke: white;
+}
+
+.route-point-destination {
+  fill: #2cc5ac;
+  stroke: #d5fff5;
+}
+
+.route-ship {
+  fill: #197fe0;
+  filter: drop-shadow(0 2px 5px rgba(22, 139, 255, 0.65));
+}
+
+.route-place {
+  position: absolute;
+  top: 62%;
+  display: grid;
+  max-width: 38%;
+  gap: 0.2rem;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-shadow: 0 2px 8px #031127;
+}
+
+.route-place small {
+  color: #83a9d2;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+}
+
+.route-place-origin {
+  left: 4%;
+  text-align: left;
+}
+
+.route-place-destination {
+  right: 4%;
+  text-align: right;
+}
+
+.route-place-current {
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.timeline-route-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.75rem 1rem;
+  align-items: end;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(157, 193, 232, 0.2);
+}
+
+.timeline-route-summary div {
+  display: grid;
+  gap: 0.24rem;
+  min-width: 0;
+}
+
+.timeline-route-summary div span,
+.timeline-status-heading {
+  color: #8ba9cc;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.timeline-route-summary div strong {
+  overflow-wrap: anywhere;
+  color: white;
+  font-size: 0.86rem;
+}
+
+.timeline-completion {
+  color: #82c8ff;
+  font-size: 1.1rem;
+}
+
+.timeline-status-card {
+  min-width: 0;
+  padding: 1.5rem clamp(1rem, 2.5vw, 2rem);
+  border-left: 1px solid rgba(160, 196, 236, 0.4);
+  background: rgba(2, 15, 35, 0.5);
+}
+
+.timeline-status-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-bottom: 0.75rem;
+}
+
+.timeline-status-heading span:last-child {
+  color: #bed4ed;
+  letter-spacing: 0.02em;
+}
+
+.timeline-status-card .timeline-scroll {
+  max-height: 24rem;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.timeline-status-card .timeline {
+  display: grid;
+  width: 100%;
+  grid-auto-flow: row;
+  grid-auto-columns: unset;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.timeline-status-card .timeline-step {
+  display: grid;
+  width: auto;
+  min-height: 4.7rem;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.8rem;
+  padding: 0.82rem 0;
+  border: 0;
+  border-bottom: 1px solid rgba(154, 190, 230, 0.13);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.timeline-status-card .timeline-step:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.timeline-status-card .timeline-step::before {
+  content: "";
+  position: absolute;
+  inset: 2.8rem auto -0.85rem 1.02rem;
+  z-index: 0;
+  width: 2px;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: repeating-linear-gradient(to bottom, rgba(179, 209, 242, 0.58) 0 5px, transparent 5px 10px);
+}
+
+.timeline-status-card .timeline-step:last-child::before {
+  display: none;
+}
+
+.timeline-status-card .timeline-step.current::after {
+  display: none;
+}
+
+.timeline-status-card .timeline-node {
+  z-index: 1;
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #d8ebff;
+  background: #09264a;
+  color: white;
+  box-shadow: inset 0 0 0 5px #09264a;
+}
+
+.timeline-status-card .timeline-step.done .timeline-node {
+  border-color: #e3f5ff;
+  background: #13a990;
+  box-shadow: inset 0 0 0 5px #09264a;
+}
+
+.timeline-status-card .timeline-step.current .timeline-node {
+  border-color: #dff3ff;
+  background: #1785ec;
+  box-shadow: inset 0 0 0 5px #09264a, 0 0 14px rgba(31, 144, 255, 0.7);
+}
+
+.timeline-status-card .timeline-step.pending .timeline-node {
+  border-color: #c5d7ea;
+}
+
+.timeline-step-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.24rem;
+  padding-top: 0.12rem;
+}
+
+.timeline-step-copy strong {
+  margin: 0;
+  color: #f4f8ff;
+  font-size: 0.94rem;
+  line-height: 1.25;
+}
+
+.timeline-status-card .timeline-step-copy span {
+  min-height: 0;
+  color: #99b2d0;
+  font-size: 0.72rem;
+}
+
+.timeline-step-copy em {
+  color: #7897bb;
+  font-size: 0.66rem;
+  font-style: normal;
+}
+
+.timeline-badge {
+  align-self: center;
+  border-radius: 999px;
+  padding: 0.38rem 0.65rem;
+  color: white;
+  background: #2375c8;
+  font-size: 0.57rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.timeline-badge.done {
+  background: #108d83;
+}
+
+.timeline-badge.current {
+  background: #bd7b17;
+}
+
+.timeline-badge.pending {
+  background: #147c60;
+}
+
+.timeline-caption {
+  margin: 1rem 0 0;
+  color: #c0d4ed;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .timeline-showcase-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timeline-status-card {
+    border-top: 1px solid rgba(160, 196, 236, 0.4);
+    border-left: 0;
+  }
+
+  .timeline-status-card .timeline-scroll {
+    max-height: 20rem;
+  }
+}
+
+@media (max-width: 540px) {
+  .timeline-route-map {
+    min-height: 10rem;
+  }
+
+  .timeline-route-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .timeline-completion {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .timeline-status-card .timeline-step {
+    grid-template-columns: 2.2rem minmax(0, 1fr);
+  }
+
+  .timeline-badge {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 0.1rem;
+  }
+}
+
 .feature-grid,
 .tools-grid {
   display: grid;

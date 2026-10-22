@@ -13,7 +13,7 @@
     <meta property="og:description" content="Reliable cargo shipping support with transparent tracking from pickup to final delivery." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.shipoversea.site/" />
-    <link rel="stylesheet" href="./styles.css?v=20261022-multi-container" />
+    <link rel="stylesheet" href="./styles.css?v=20261022-timeline-reference" />
   </head>
   <body>
     <header class="topbar">
@@ -171,7 +171,7 @@
         </article>
       </section>
 
-      <section class="timeline-panel dashboard-surface" data-page="tracking" aria-label="Shipment timeline">
+      <section class="timeline-panel dashboard-surface timeline-showcase" data-page="tracking" aria-label="Shipment timeline">
         <div class="section-head">
           <div>
             <p class="eyebrow">MILESTONES</p>
@@ -179,20 +179,37 @@
           </div>
           <span id="lastUpdated">-</span>
         </div>
-        <div class="timeline-overview" aria-label="Shipment timeline summary">
-          <div>
-            <span>Current milestone</span>
-            <strong id="timelineCurrent">Waiting for shipment</strong>
+        <div class="timeline-showcase-grid">
+          <div class="timeline-route-card" aria-label="Shipment route">
+            <div class="timeline-route-brand"><strong>SHIP<span>OVERSEAS</span></strong><small>OCEAN LOGISTICS</small></div>
+            <div class="timeline-route-map" aria-hidden="true">
+              <svg viewBox="0 0 800 260" preserveAspectRatio="none">
+                <path class="route-line-base" d="M82 145 C205 115 258 180 360 145 S520 95 718 132" />
+                <path class="route-line-active" d="M82 145 C205 115 258 180 360 145 S520 95 718 132" />
+                <circle class="route-point route-point-origin" cx="82" cy="145" r="8" />
+                <circle class="route-point route-point-current" cx="402" cy="132" r="9" />
+                <circle class="route-point route-point-destination" cx="718" cy="132" r="8" />
+                <path class="route-ship" d="M365 104h48l-7 14h-32l-9-14Zm9-5h15v5h-15z" />
+              </svg>
+              <div class="route-place route-place-origin"><span id="timelineRouteOrigin">Origin</span><small>ORIGIN</small></div>
+              <div class="route-place route-place-current"><span id="timelineRouteCurrent">Current location</span><small>IN TRANSIT</small></div>
+              <div class="route-place route-place-destination"><span id="timelineRouteDestination">Destination</span><small>DESTINATION</small></div>
+            </div>
+            <div class="timeline-route-summary">
+              <div><span>TRACKING</span><strong id="timelineRouteTracking">Search for a shipment</strong></div>
+              <div><span>CURRENT MILESTONE</span><strong id="timelineCurrent">Waiting for shipment</strong></div>
+              <div><span>ESTIMATED ARRIVAL</span><strong id="timelineRouteEta">-</strong></div>
+              <strong class="timeline-completion" id="timelineCompletion">0%</strong>
+            </div>
           </div>
-          <div>
-            <span>Journey completion</span>
-            <strong id="timelineCompletion">0%</strong>
+          <div class="timeline-status-card">
+            <div class="timeline-status-heading"><span>SHIPMENT PROGRESS</span><span id="timelineProgressLabel">Awaiting tracking</span></div>
+            <div class="timeline-scroll" tabindex="0" aria-label="Shipment milestones">
+              <ol class="timeline" id="timeline"></ol>
+            </div>
           </div>
         </div>
-        <div class="timeline-progress-rail" aria-hidden="true"><span id="timelineProgressRail"></span></div>
-        <div class="timeline-scroll" tabindex="0" aria-label="Shipment milestones. Scroll horizontally to view all steps.">
-          <ol class="timeline" id="timeline"></ol>
-        </div>
+        <p class="timeline-caption">Your container journey, updated milestone by milestone</p>
       </section>
 
       <section id="features" class="feature-panel dashboard-surface" data-page="features" aria-label="Feature set">
@@ -830,6 +847,6 @@
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js?v=20261022-multi-container"></script>
+    <script type="module" src="./app.js?v=20261022-timeline-reference"></script>
   </body>
 </html>

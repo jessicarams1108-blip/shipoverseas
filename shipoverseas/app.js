@@ -227,6 +227,12 @@ const elements = {
   timelineCurrent: document.querySelector("#timelineCurrent"),
   timelineCompletion: document.querySelector("#timelineCompletion"),
   timelineProgressRail: document.querySelector("#timelineProgressRail"),
+  timelineProgressLabel: document.querySelector("#timelineProgressLabel"),
+  timelineRouteOrigin: document.querySelector("#timelineRouteOrigin"),
+  timelineRouteCurrent: document.querySelector("#timelineRouteCurrent"),
+  timelineRouteDestination: document.querySelector("#timelineRouteDestination"),
+  timelineRouteTracking: document.querySelector("#timelineRouteTracking"),
+  timelineRouteEta: document.querySelector("#timelineRouteEta"),
   timeline: document.querySelector("#timeline"),
   loginForm: document.querySelector("#loginForm"),
   registerForm: document.querySelector("#registerForm"),
@@ -1001,15 +1007,17 @@ function renderTimeline() {
     elements.lastUpdated.textContent = "-";
     elements.timelineCurrent.textContent = "Waiting for shipment";
     elements.timelineCompletion.textContent = "0%";
-    elements.timelineProgressRail.style.width = "0%";
+    elements.timelineProgressLabel.textContent = "Awaiting tracking";
+    elements.timelineRouteOrigin.textContent = "Origin";
+    elements.timelineRouteCurrent.textContent = "Current location";
+    elements.timelineRouteDestination.textContent = "Destination";
+    elements.timelineRouteTracking.textContent = "Search for a shipment";
+    elements.timelineRouteEta.textContent = "-";
     elements.timeline.innerHTML = `
-      <li class="timeline-step current">
-        <span class="timeline-node" aria-hidden="true">—</span>
-        <div>
-          <small>Start tracking</small>
-          <strong>No shipment selected</strong>
-          <span>Search for a tracking number to see its journey.</span>
-        </div>
+      <li class="timeline-step pending">
+        <span class="timeline-node" aria-hidden="true"></span>
+        <div class="timeline-step-copy"><strong>No shipment selected</strong><span>Search for a tracking number to see its journey.</span></div>
+        <span class="timeline-badge pending">PENDING</span>
       </li>`;
     return;
   }
@@ -1022,29 +1030,28 @@ function renderTimeline() {
   const isDelivered = String(shipment.status).toLowerCase() === "delivered";
   elements.timelineCurrent.textContent = shipment.status;
   elements.timelineCompletion.textContent = `${progress}%`;
-  elements.timelineProgressRail.style.width = `${progress}%`;
+  elements.timelineProgressLabel.textContent = `${progress}% complete`;
+  elements.timelineRouteOrigin.textContent = shipment.origin || "Origin";
+  elements.timelineRouteCurrent.textContent = currentLocationName(shipment);
+  elements.timelineRouteDestination.textContent = shipment.destination || "Destination";
+  elements.timelineRouteTracking.textContent = shipment.trackingId;
+  elements.timelineRouteEta.textContent = formatDate(shipment.eta);
   elements.timeline.innerHTML = steps
     .map((step, index) => ({ ...step, number: index + 1 }))
     .map((step, index) => {
       const isComplete = index < currentIndex || isDelivered;
       const isCurrent = index === currentIndex && !isDelivered;
       const stateName = isComplete ? "done" : isCurrent ? "current" : "pending";
-      const note = isComplete ? "Milestone complete" : isCurrent ? currentLocationName(shipment) : "Next milestone";
-      const timestamp =
-        isCurrent
-          ? `Updated ${formatDateTime(shipment.currentLocationUpdatedAt || shipment.lastUpdated)}`
-          : isComplete
-            ? "Completed"
-            : "We’ll show an update here";
+      const note = isComplete ? "Milestone complete" : isCurrent ? currentLocationName(shipment) : "Upcoming milestone";
+      const timestamp = isCurrent ? `Updated ${formatDateTime(shipment.currentLocationUpdatedAt || shipment.lastUpdated)}` : "";
       return `
         <li class="timeline-step ${stateName}">
-          <span class="timeline-node" aria-hidden="true">${isComplete ? "✓" : escapeHtml(step.number)}</span>
-          <div>
-            <small>${isComplete ? "Complete" : isCurrent ? "In progress" : `Step ${step.number}`}</small>
+          <span class="timeline-node" aria-hidden="true">${isComplete ? "✓" : ""}</span>
+          <div class="timeline-step-copy">
             <strong>${escapeHtml(step.name)}</strong>
-            <span>${escapeHtml(note)}</span>
-            <em>${escapeHtml(timestamp)}</em>
+            <span>${escapeHtml(isCurrent ? `${note} · ${timestamp}` : note)}</span>
           </div>
+          <span class="timeline-badge ${stateName}">${isComplete ? "COMPLETE" : isCurrent ? "IN PROGRESS" : "PENDING"}</span>
         </li>`;
     })
     .join("");
